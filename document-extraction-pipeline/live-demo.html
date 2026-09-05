@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Extraction — Live OCR Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+  :root{
+    --bg:#100D18; --bg-panel:#1C1729; --paper:#F3EEFA; --slate:#9E90B8; --line:rgba(255,255,255,0.14);
+    --coral:#C4A6FB; --teal:#EDE4FF; --violet:#9B7EDE;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--paper); font-family:'Segoe UI', -apple-system, sans-serif; padding:32px 20px 60px;}
+  .wrap{max-width:620px; margin:0 auto;}
+  a.back{color:var(--slate); text-decoration:none; font-size:13px;}
+  h1{font-size:26px; margin:18px 0 6px;}
+  p.lead{color:var(--slate); font-size:14.5px; margin:0 0 24px; line-height:1.5;}
+  .card{background:var(--bg-panel); border:1px solid var(--line); border-radius:6px; padding:22px; margin-bottom:16px;}
+  .dropzone{
+    border:2px dashed var(--line); border-radius:6px; padding:36px 20px; text-align:center;
+    cursor:pointer; color:var(--slate); font-size:14px; transition:border-color .15s;
+  }
+  .dropzone:hover, .dropzone.drag{border-color:var(--coral); color:var(--paper);}
+  input[type="file"]{display:none;}
+  button{
+    background:var(--coral); color:#1B1130; border:none; padding:11px 18px; border-radius:4px;
+    font-weight:600; font-size:14px; cursor:pointer; margin-top:14px;
+  }
+  button:disabled{opacity:0.5; cursor:default;}
+  .preview{max-width:100%; border-radius:4px; margin-top:14px; border:1px solid var(--line);}
+  .progress-wrap{margin-top:14px; background:var(--bg); border-radius:20px; height:8px; overflow:hidden; display:none;}
+  .progress-bar{height:100%; background:var(--coral); width:0%; transition:width .2s;}
+  .progress-label{font-size:12.5px; color:var(--slate); margin-top:6px;}
+  textarea{
+    width:100%; min-height:140px; background:var(--bg); border:1px solid var(--line); color:var(--paper);
+    border-radius:4px; padding:12px; font-family:monospace; font-size:13px; margin-top:10px; resize:vertical;
+  }
+  .match{
+    border-left:3px solid var(--violet); background:rgba(155,126,222,0.08);
+    padding:8px 12px; border-radius:2px; margin-bottom:6px; font-family:monospace; font-size:13px;
+  }
+  .foot{font-size:12px; color:var(--slate); margin-top:24px; line-height:1.5;}
+  h3{font-size:14px; text-transform:uppercase; letter-spacing:0.04em; color:var(--slate); margin:20px 0 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="https://madhumithachalla.github.io">← Back to portfolio</a>
+  <h1>Document extraction — live OCR demo</h1>
+  <p class="lead">A working recreation of my document-extraction pipeline, running fully in your browser via Tesseract.js (WASM OCR — no server, no upload to anywhere). Upload a photo or scan of a document with an ID-like code (e.g. "AB123456") and it'll extract the text and flag any matching rows, same pattern-matching approach as the original Python script.</p>
+
+  <div class="card">
+    <div class="dropzone" id="dropzone">
+      Click to choose an image, or drag one here<br>
+      <span style="font-size:12px;">JPG or PNG works best — a clear photo of a printed page</span>
+    </div>
+    <input type="file" id="fileInput" accept="image/*">
+    <img id="preview" class="preview" style="display:none;">
+    <div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="progress-label" id="progressLabel"></div>
+    <button id="runBtn" disabled>Run OCR</button>
+  </div>
+
+  <div class="card" id="resultsCard" style="display:none;">
+    <h3>Extracted text</h3>
+    <textarea id="rawText" readonly></textarea>
+    <h3>Matched rows (pattern: two letters + six digits, e.g. AB123456)</h3>
+    <div id="matches"></div>
+  </div>
+
+  <p class="foot">OCR engine: Tesseract.js, running entirely client-side — your image never leaves your device. Matching logic mirrors <code>document_extraction_pipeline.py</code>, the actual Python script I built for this project.</p>
+</div>
+
+<script>
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const preview = document.getElementById('preview');
+const runBtn = document.getElementById('runBtn');
+const progressWrap = document.getElementById('progressWrap');
+const progressBar = document.getElementById('progressBar');
+const progressLabel = document.getElementById('progressLabel');
+const resultsCard = document.getElementById('resultsCard');
+const rawText = document.getElementById('rawText');
+const matchesEl = document.getElementById('matches');
+
+let currentFile = null;
+const TARGET_PATTERN = /\b[A-Z]{2}\d{6}\b/g;
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault(); dropzone.classList.remove('drag');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+  if (!file.type.startsWith('image/')) return;
+  currentFile = file;
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = 'block';
+  runBtn.disabled = false;
+  resultsCard.style.display = 'none';
+}
+
+runBtn.addEventListener('click', async () => {
+  if (!currentFile) return;
+  runBtn.disabled = true;
+  progressWrap.style.display = 'block';
+  progressLabel.textContent = "Loading OCR engine…";
+
+  try {
+    const { data } = await Tesseract.recognize(currentFile, 'eng', {
+      logger: (m) => {
+        if (m.status && typeof m.progress === 'number') {
+          progressBar.style.width = `${Math.round(m.progress * 100)}%`;
+          progressLabel.textContent = `${m.status} — ${Math.round(m.progress * 100)}%`;
+        }
+      }
+    });
+
+    rawText.value = data.text;
+    const found = [...data.text.matchAll(TARGET_PATTERN)].map(m => m[0]);
+    matchesEl.innerHTML = found.length
+      ? found.map(f => `<div class="match">Match found: ${f}</div>`).join('')
+      : `<div style="color:var(--slate); font-size:13px;">No matches found for the target pattern in this image.</div>`;
+    resultsCard.style.display = 'block';
+  } catch (err) {
+    progressLabel.textContent = "OCR failed — try a clearer image.";
+  } finally {
+    runBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
