@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spotify Success Analysis — Live Explorer</title>
+<script src="spotify_data.js"></script>
+<style>
+  :root{
+    --bg:#100D18; --bg-panel:#1C1729; --paper:#F3EEFA; --slate:#9E90B8; --line:rgba(255,255,255,0.14);
+    --coral:#C4A6FB; --teal:#EDE4FF; --violet:#9B7EDE;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--paper); font-family:'Segoe UI', -apple-system, sans-serif; padding:32px 20px 60px;}
+  .wrap{max-width:720px; margin:0 auto;}
+  a.back{color:var(--slate); text-decoration:none; font-size:13px;}
+  h1{font-size:26px; margin:18px 0 6px;}
+  p.lead{color:var(--slate); font-size:14.5px; margin:0 0 24px; line-height:1.5;}
+  .card{background:var(--bg-panel); border:1px solid var(--line); border-radius:6px; padding:22px; margin-bottom:16px;}
+  .stat-row{display:flex; gap:24px; flex-wrap:wrap; margin-bottom:6px;}
+  .stat{flex:1; min-width:140px;}
+  .stat .n{font-size:26px; font-weight:700; color:var(--coral);}
+  .stat .l{font-size:12px; color:var(--slate); text-transform:uppercase; letter-spacing:0.03em;}
+  select{
+    background:var(--bg); border:1px solid var(--line); color:var(--paper); padding:9px 12px;
+    border-radius:4px; font-size:14px;
+  }
+  .bar-row{display:flex; align-items:center; gap:10px; margin-bottom:9px;}
+  .bar-label{width:90px; font-size:13px; color:var(--slate); text-transform:capitalize; flex:none;}
+  .bar-track{flex:1; background:var(--bg); border-radius:20px; height:16px; overflow:hidden;}
+  .bar-fill{height:100%; background:linear-gradient(90deg, var(--violet), var(--coral)); border-radius:20px;}
+  .bar-val{width:36px; text-align:right; font-size:12.5px; color:var(--slate); flex:none;}
+  h3{font-size:13px; text-transform:uppercase; letter-spacing:0.05em; color:var(--slate); margin:0 0 14px;}
+  .foot{font-size:12px; color:var(--slate); margin-top:24px; line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="https://madhumithachalla.github.io">← Back to portfolio</a>
+  <h1>Spotify success analysis — live explorer</h1>
+  <p class="lead">The same question my FIT5145 analysis asked — does genre or an individual audio feature predict popularity better? — running live against a 350-track representative sample (the original analysis used 114,000 real Spotify tracks; this demo uses a smaller synthetic sample built to reflect the same real pattern, since the full raw dataset isn't mine to redistribute).</p>
+
+  <div class="card">
+    <h3>Headline finding</h3>
+    <div class="stat-row">
+      <div class="stat"><div class="n" id="genreEffect">—</div><div class="l">Genre effect vs. avg feature</div></div>
+      <div class="stat"><div class="n" id="rowCount">—</div><div class="l">Tracks in this sample</div></div>
+      <div class="stat"><div class="n" id="genreCount">—</div><div class="l">Genres compared</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Average popularity by genre</h3>
+    <div id="genreBars"></div>
+  </div>
+
+  <div class="card">
+    <h3>Correlation of each audio feature with popularity</h3>
+    <div id="featureBars"></div>
+  </div>
+
+  <div class="card">
+    <h3>Explore a single genre</h3>
+    <select id="genrePicker"></select>
+    <div id="genreDetail" style="margin-top:14px; font-size:14px; color:var(--slate);"></div>
+  </div>
+
+  <p class="foot">Method mirrors <code>spotify_success_analysis.R</code>: genre's effect on popularity is measured via between-group variance (an eta-squared style calculation), audio features via Pearson correlation. This runs entirely in your browser on the sample above — no server, no dataset upload.</p>
+</div>
+
+<script>
+const FEATURES = ["danceability", "energy", "valence", "tempo", "acousticness"];
+
+function mean(arr) { return arr.reduce((a,b) => a+b, 0) / arr.length; }
+
+function pearson(xs, ys) {
+  const mx = mean(xs), my = mean(ys);
+  let num = 0, dx2 = 0, dy2 = 0;
+  for (let i = 0; i < xs.length; i++) {
+    const dx = xs[i] - mx, dy = ys[i] - my;
+    num += dx * dy; dx2 += dx*dx; dy2 += dy*dy;
+  }
+  return num / Math.sqrt(dx2 * dy2);
+}
+
+function genreEtaSquared(data) {
+  const overall = mean(data.map(d => d.popularity));
+  const byGenre = {};
+  data.forEach(d => { (byGenre[d.genre] = byGenre[d.genre] || []).push(d.popularity); });
+
+  let ssBetween = 0, ssTotal = 0;
+  Object.values(byGenre).forEach(vals => {
+    const m = mean(vals);
+    ssBetween += vals.length * Math.pow(m - overall, 2);
+  });
+  data.forEach(d => { ssTotal += Math.pow(d.popularity - overall, 2); });
+  return ssBetween / ssTotal;
+}
+
+function render() {
+  const data = SPOTIFY_SAMPLE;
+  document.getElementById('rowCount').textContent = data.length;
+
+  const genres = [...new Set(data.map(d => d.genre))].sort();
+  document.getElementById('genreCount').textContent = genres.length;
+
+  // Genre effect vs average feature correlation (abs)
+  const eta = genreEtaSquared(data);
+  const featureCorrs = FEATURES.map(f => Math.abs(pearson(data.map(d=>d[f]), data.map(d=>d.popularity))));
+  const avgFeatureEffect = mean(featureCorrs.map(c => c*c));
+  const ratio = eta / avgFeatureEffect;
+  document.getElementById('genreEffect').textContent = ratio.toFixed(1) + 'x';
+
+  // Genre bars
+  const genreAvgs = genres.map(g => {
+    const vals = data.filter(d => d.genre === g).map(d => d.popularity);
+    return { genre: g, avg: mean(vals) };
+  }).sort((a,b) => b.avg - a.avg);
+  const maxAvg = Math.max(...genreAvgs.map(g => g.avg));
+  document.getElementById('genreBars').innerHTML = genreAvgs.map(g => `
+    <div class="bar-row">
+      <div class="bar-label">${g.genre}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(g.avg/maxAvg*100).toFixed(0)}%"></div></div>
+      <div class="bar-val">${g.avg.toFixed(0)}</div>
+    </div>`).join('');
+
+  // Feature correlation bars
+  const featRows = FEATURES.map((f, i) => ({ f, c: featureCorrs[i] })).sort((a,b) => b.c - a.c);
+  const maxC = Math.max(...featRows.map(r => r.c));
+  document.getElementById('featureBars').innerHTML = featRows.map(r => `
+    <div class="bar-row">
+      <div class="bar-label">${r.f}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(r.c/maxC*100).toFixed(0)}%"></div></div>
+      <div class="bar-val">${r.c.toFixed(2)}</div>
+    </div>`).join('');
+
+  // Genre picker
+  const picker = document.getElementById('genrePicker');
+  picker.innerHTML = genres.map(g => `<option value="${g}">${g}</option>`).join('');
+  picker.addEventListener('change', () => showGenreDetail(picker.value, data));
+  showGenreDetail(genres[0], data);
+}
+
+function showGenreDetail(genre, data) {
+  const rows = data.filter(d => d.genre === genre);
+  const avgPop = mean(rows.map(d => d.popularity));
+  const avgDance = mean(rows.map(d => d.danceability));
+  const avgEnergy = mean(rows.map(d => d.energy));
+  const avgTempo = mean(rows.map(d => d.tempo));
+  document.getElementById('genreDetail').innerHTML =
+    `<b style="color:var(--paper); text-transform:capitalize;">${genre}</b> — ${rows.length} tracks in sample<br>
+     Avg popularity: ${avgPop.toFixed(0)} · Avg danceability: ${avgDance.toFixed(2)} · Avg energy: ${avgEnergy.toFixed(2)} · Avg tempo: ${avgTempo.toFixed(0)} BPM`;
+}
+
+render();
+</script>
+</body>
+</html>

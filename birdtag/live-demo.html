@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BirdTag — Interactive Flow Demo</title>
+<style>
+  :root{
+    --bg:#100D18; --bg-panel:#1C1729; --paper:#F3EEFA; --slate:#9E90B8; --line:rgba(255,255,255,0.14);
+    --coral:#C4A6FB; --teal:#EDE4FF; --violet:#9B7EDE;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--paper); font-family:'Segoe UI', -apple-system, sans-serif; padding:32px 20px 60px;}
+  .wrap{max-width:560px; margin:0 auto;}
+  a.back{color:var(--slate); text-decoration:none; font-size:13px;}
+  h1{font-size:26px; margin:18px 0 6px;}
+  p.lead{color:var(--slate); font-size:14.5px; margin:0 0 12px; line-height:1.5;}
+  .notice{
+    background:rgba(196,166,251,0.1); border:1px solid rgba(196,166,251,0.3); border-radius:6px;
+    padding:12px 16px; font-size:13px; color:var(--paper); margin-bottom:24px; line-height:1.5;
+  }
+  .card{background:var(--bg-panel); border:1px solid var(--line); border-radius:6px; padding:22px; margin-bottom:16px;}
+  .step{display:flex; gap:12px; align-items:flex-start; margin-bottom:4px;}
+  .step-num{
+    width:26px; height:26px; border-radius:50%; background:var(--bg); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--slate); flex:none;
+  }
+  .step-num.done{background:var(--coral); color:#1B1130; border-color:var(--coral);}
+  .step-body{flex:1; padding-bottom:20px; border-left:1px solid var(--line); margin-left:13px; padding-left:22px; margin-top:-4px;}
+  .step:last-child .step-body{border-left:none;}
+  h3{font-size:15px; margin:0 0 8px;}
+  p.desc{font-size:13.5px; color:var(--slate); margin:0 0 12px; line-height:1.4;}
+  button{
+    background:var(--coral); color:#1B1130; border:none; padding:10px 16px; border-radius:4px;
+    font-weight:600; font-size:13.5px; cursor:pointer;
+  }
+  button:disabled{opacity:0.4; cursor:default;}
+  input[type="file"]{display:none;}
+  .dropzone{
+    border:2px dashed var(--line); border-radius:6px; padding:24px; text-align:center;
+    cursor:pointer; color:var(--slate); font-size:13.5px;
+  }
+  .dropzone:hover{border-color:var(--coral); color:var(--paper);}
+  .thumb{max-width:160px; border-radius:4px; margin-top:12px; border:1px solid var(--line);}
+  .result{
+    border-left:3px solid var(--violet); background:rgba(155,126,222,0.08);
+    padding:12px 16px; border-radius:2px; margin-top:14px;
+  }
+  .result b{display:block; font-size:14.5px; margin-bottom:4px;}
+  .result span{font-size:13px; color:var(--slate);}
+  .tag-status{
+    display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--teal);
+    background:rgba(237,228,255,0.08); border:1px solid rgba(237,228,255,0.25); padding:4px 10px; border-radius:20px;
+  }
+  .foot{font-size:12px; color:var(--slate); margin-top:24px; line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="https://madhumithachalla.github.io">← Back to portfolio</a>
+  <h1>BirdTag — interactive flow demo</h1>
+  <p class="lead">A walkthrough of the piece I personally built for BirdTag: Cognito-gated authentication into a signed S3 upload, then species tagging.</p>
+  <div class="notice">⚠ <b>This is a front-end simulation.</b> The real BirdTag runs against deployed AWS infrastructure (Cognito, API Gateway, Lambda, DynamoDB, S3) that can't run from a static file. The auth step and the species result below are simulated client-side so you can walk through the interaction flow I designed — the actual auth logic and Lambda functions are in <code>birdtag_auth_and_upload_demo.py</code>.</div>
+
+  <div class="card">
+    <div class="step">
+      <div class="step-num" id="num1">1</div>
+      <div class="step-body">
+        <h3>Sign in (Cognito, simulated)</h3>
+        <p class="desc">In production this hits a real Cognito User Pool. Here it just simulates the authenticated state so you can proceed.</p>
+        <button id="signInBtn">Sign in</button>
+        <div id="authStatus" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" id="num2">2</div>
+      <div class="step-body">
+        <h3>Upload media (signed URL, simulated)</h3>
+        <p class="desc">Real flow: this Lambda function generates a short-lived presigned S3 URL, scoped to your Cognito user ID. Try uploading any bird photo.</p>
+        <div class="dropzone" id="dropzone">Click to choose an image</div>
+        <input type="file" id="fileInput" accept="image/*">
+        <img id="thumb" class="thumb" style="display:none;">
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num" id="num3">3</div>
+      <div class="step-body">
+        <h3>Species tagging (simulated)</h3>
+        <p class="desc">Real flow: an ML model tags the species server-side. This demo picks a plausible result from a fixed list to demonstrate the UI, not a real detection.</p>
+        <button id="tagBtn" disabled>Analyze upload</button>
+        <div id="tagResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">Real project stack: AWS Lambda, API Gateway (Cognito authorizers), DynamoDB, S3, Python. See the actual auth &amp; upload Lambda handler I wrote for my <a href="birdtag_auth_and_upload_demo.py" download style="color:var(--coral);">download here</a>.</p>
+</div>
+
+<script>
+let signedIn = false;
+let uploaded = false;
+
+const SPECIES = [
+  { name: "Superb Fairywren", confidence: 0.94 },
+  { name: "Rainbow Lorikeet", confidence: 0.89 },
+  { name: "Australian Magpie", confidence: 0.91 },
+  { name: "Laughing Kookaburra", confidence: 0.87 },
+  { name: "Crimson Rosella", confidence: 0.93 },
+];
+
+document.getElementById('signInBtn').addEventListener('click', () => {
+  signedIn = true;
+  document.getElementById('num1').classList.add('done');
+  document.getElementById('num1').textContent = '✓';
+  document.getElementById('authStatus').innerHTML = '<span class="tag-status">✓ Authenticated (Cognito token simulated)</span>';
+  document.getElementById('signInBtn').disabled = true;
+});
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const thumb = document.getElementById('thumb');
+const tagBtn = document.getElementById('tagBtn');
+
+dropzone.addEventListener('click', () => {
+  if (!signedIn) { alert('Sign in first — step 1.'); return; }
+  fileInput.click();
+});
+fileInput.addEventListener('change', (e) => {
+  if (!e.target.files.length) return;
+  thumb.src = URL.createObjectURL(e.target.files[0]);
+  thumb.style.display = 'block';
+  uploaded = true;
+  document.getElementById('num2').classList.add('done');
+  document.getElementById('num2').textContent = '✓';
+  tagBtn.disabled = false;
+});
+
+tagBtn.addEventListener('click', () => {
+  const pick = SPECIES[Math.floor(Math.random() * SPECIES.length)];
+  document.getElementById('num3').classList.add('done');
+  document.getElementById('num3').textContent = '✓';
+  document.getElementById('tagResult').innerHTML = `
+    <div class="result">
+      <b>Tagged: ${pick.name}</b>
+      <span>Confidence: ${(pick.confidence * 100).toFixed(0)}% (simulated result — real tagging runs server-side)</span>
+    </div>`;
+});
+</script>
+</body>
+</html>
