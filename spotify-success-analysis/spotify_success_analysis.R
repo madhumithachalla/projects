@@ -1,5 +1,5 @@
 # What Actually Predicts an Independent Artist's Success — Spotify Track Analysis
-# Solo project (FIT5145 Data Science) — this is my own individual work end to end.
+# Solo project — this is my own individual work end to end.
 #
 # Goal: test whether genre, tempo, or other audio features actually correlate
 # with a track's success, using ~114K Spotify tracks.
