@@ -1,6 +1,6 @@
 # BirdTag — Serverless Media Tagging Platform
 
-**Team project (4 people) · Monash University (FIT5225) · My role: authentication & backend API**
+**Team project (4 people) · Monash University · My role: authentication & backend API**
 
 A serverless system for automatically tagging and retrieving wildlife media using ML-based
 species detection. I owned identity/access and 4 of the 8 backend functions.
