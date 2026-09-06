@@ -1,208 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IELTS Band Lab — Live Practice Tool</title>
-<style>
-  body{margin:0;background:#F6F7F9;}
-  #back-link{
-    display:inline-block; font-family:system-ui,sans-serif; font-size:13px; color:#5A6473;
-    text-decoration:none; padding:12px 18px 0;
-  }
-  #back-link:hover{color:#16202E;}
-  #root-loading{
-    font-family:system-ui,sans-serif; color:#5A6473; padding:40px 18px; text-align:center;
-  }
-</style>
-<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/recharts@2.15.4/umd/Recharts.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.25.6/babel.min.js"></script>
-</head>
-<body>
-<a id="back-link" href="https://madhumithachalla.github.io">&larr; Back to portfolio</a>
-<div id="root"><p id="root-loading">Loading IELTS Band Lab…</p></div>
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
+} from "recharts";
+import {
+  Headphones, BookOpen, PenLine, Mic, BarChart3, Play, Pause, Square, RotateCcw,
+  Check, X, Eye, EyeOff, Volume2, Gauge, ChevronRight, Circle, TrendingUp, AlertCircle,
+  Sun, Moon,
+} from "lucide-react";
 
-<script type="text/babel" data-presets="react">
-const { useState, useRef, useEffect, useCallback } = React;
-const { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } = Recharts;
-
-/* Minimal lucide-style icon components (inline SVG, no dependency) */
-
-function Headphones({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" />
-    </svg>
-  );
-}
-
-function BookOpen({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 5v16" />
-  <path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" />
-    </svg>
-  );
-}
-
-function PenLine({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M13 21h8" />
-  <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
-    </svg>
-  );
-}
-
-function Mic({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 19v3" />
-  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-  <rect x="9" y="2" width="6" height="13" rx="3" />
-    </svg>
-  );
-}
-
-function BarChart3({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 3v16a2 2 0 0 0 2 2h16" />
-  <path d="M18 17V9" />
-  <path d="M13 17V5" />
-  <path d="M8 17v-3" />
-    </svg>
-  );
-}
-
-function Play({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" />
-    </svg>
-  );
-}
-
-function Pause({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="14" y="3" width="5" height="18" rx="1" />
-  <rect x="5" y="3" width="5" height="18" rx="1" />
-    </svg>
-  );
-}
-
-function Square({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect width="18" height="18" x="3" y="3" rx="2" />
-    </svg>
-  );
-}
-
-function RotateCcw({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-  <path d="M3 3v5h5" />
-    </svg>
-  );
-}
-
-function Check({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  );
-}
-
-function X({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 6 6 18" />
-  <path d="m6 6 12 12" />
-    </svg>
-  );
-}
-
-function Eye({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
-  <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
-function EyeOff({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
-  <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
-  <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
-  <path d="m2 2 20 20" />
-    </svg>
-  );
-}
-
-function Volume2({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" />
-  <path d="M16 9a5 5 0 0 1 0 6" />
-  <path d="M19.364 18.364a9 9 0 0 0 0-12.728" />
-    </svg>
-  );
-}
-
-function Gauge({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m12 14 4-4" />
-  <path d="M3.34 19a10 10 0 1 1 17.32 0" />
-    </svg>
-  );
-}
-
-function ChevronRight({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m9 18 6-6-6-6" />
-    </svg>
-  );
-}
-
-function Circle({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-    </svg>
-  );
-}
-
-function TrendingUp({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 7h6v6" />
-  <path d="m22 7-8.5 8.5-5-5L2 17" />
-    </svg>
-  );
-}
-
-function AlertCircle({ size = 16, className = "" }) {
-  return (
-    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-  <line x1="12" x2="12" y1="8" y2="12" />
-  <line x1="12" x2="12.01" y1="16" y2="16" />
-    </svg>
-  );
-}
-
+/* Small localStorage helpers (safe if storage is unavailable) */
+const loadLS = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+const saveLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 
 /* ============================== BAND TABLES (official) ============================== */
 function listeningBand(r) {
@@ -1269,18 +1077,24 @@ const TABS = [
   { id: "feedback", label: "Feedback", icon: BarChart3 },
 ];
 
-function App() {
+export default function App() {
   const [tab, setTab] = useState("listening");
-  const [results, setResults] = useState({ listening: null, reading: null });
+  const [results, setResults] = useState(() => loadLS("bandlab_results", { listening: null, reading: null }));
+  const [dark, setDark] = useState(() => loadLS("bandlab_theme", false));
+  useEffect(() => { saveLS("bandlab_results", results); }, [results]);
+  useEffect(() => { saveLS("bandlab_theme", dark); }, [dark]);
   return (
-    <div className="root">
+    <div className={`root ${dark ? "dark" : ""}`}>
       <style>{CSS}</style>
       <header className="topbar">
         <div className="brand">
           <div className="brand-mark"><Gauge size={18} /></div>
           <div><div className="brand-name">Band Lab</div><div className="brand-tag">IELTS Academic · full official format</div></div>
         </div>
-        <div className="band-strip">{[0,1,2,3,4,5,6,7,8,9].map((n) => <span key={n} className="band-tick">{n}</span>)}</div>
+        <div className="top-right">
+          <div className="band-strip">{[0,1,2,3,4,5,6,7,8,9].map((n) => <span key={n} className="band-tick">{n}</span>)}</div>
+          <button className="theme-btn" onClick={() => setDark((d) => !d)} title="Toggle dark mode" aria-label="Toggle dark mode">{dark ? <Sun size={16} /> : <Moon size={16} />}</button>
+        </div>
       </header>
 
       <nav className="tabs">
@@ -1313,6 +1127,15 @@ function App() {
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap');
 :root{--paper:#F6F7F9;--card:#FFFFFF;--ink:#16202E;--graphite:#5A6473;--accent:#E14434;--accent-soft:#FCEAE7;--green:#2F8559;--green-soft:#E6F2EB;--line:#E6E8EC;--line2:#EEF0F3;--serif:'Fraunces',Georgia,serif;--sans:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace}
+.top-right{display:flex;align-items:center;gap:10px}
+.theme-btn{background:#2B3848;border:none;color:#fff;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.theme-btn:hover{background:#37485B}
+.root.dark{--paper:#0E141B;--card:#161D26;--ink:#E7ECF1;--graphite:#94A2B0;--line:#26303B;--line2:#1C242E;--accent-soft:#3A211E;--green-soft:#15281E;--soft:#161D26}
+.root.dark .passage p,.root.dark .hl-row{color:#C5CFD9}
+.root.dark .instruction,.root.dark .prompt-box,.root.dark .chart,.root.dark .headings-list,.root.dark .bank,.root.dark .legend,.root.dark .model,.root.dark .sample,.root.dark .verdict,.root.dark .notes,.root.dark .form-sheet,.root.dark .band-card,.root.dark .cd,.root.dark .empty{background:var(--card)}
+.root.dark .choice,.root.dark .ptab,.root.dark .pill,.root.dark .lp,.root.dark .sel,.root.dark .writepad,.root.dark .ghost,.root.dark .timer,.root.dark .reveal,.root.dark .form-row:nth-child(even){background:var(--card);color:var(--ink)}
+.root.dark .gap-input{color:var(--ink)}
+.root.dark .choice-mark,.root.dark .qrange,.root.dark .wc{background:var(--line2);color:var(--graphite)}
 *{box-sizing:border-box}
 .root{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;line-height:1.55;-webkit-font-smoothing:antialiased}
 .root button{font-family:inherit;cursor:pointer}
@@ -1496,9 +1319,3 @@ const CSS = `
 @media (max-width:860px){.read-grid{grid-template-columns:1fr}.passage{position:static;max-height:none}.fb-grid{grid-template-columns:1fr}.cd-row{grid-template-columns:1fr}.mod-head h2{font-size:26px}.band-strip{display:none}.form-row{grid-template-columns:28px 1fr;row-gap:4px}.form-fill{grid-column:2}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 `;
-
-
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-</script>
-</body>
-</html>

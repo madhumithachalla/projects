@@ -1,6 +1,6 @@
 # ESaver — Energy Dashboard & Community App
 
-**Team project (4 people) · Monash University (FIT5046) · My role: weather integration & recommendation logic**
+**Team project (4 people) · Monash University · My role: weather integration & recommendation logic**
 
 An Android app pairing live weather data with practical energy-saving tips, plus a
 real-time community chat for users to share their own.
