@@ -1,6 +1,6 @@
 # What Actually Predicts an Independent Artist's Success
 
-**Solo project · Monash University (FIT5145)**
+**Solo project · Monash University**
 
 Statistical analysis of 114,000 real Spotify tracks testing whether genre, tempo, or
 individual audio features actually correlate with a track's popularity — rather than
