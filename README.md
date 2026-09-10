@@ -3,14 +3,16 @@
 A collection of the technical and personal projects behind my [portfolio](https://madhumithachalla.github.io)
 and resume — real code, not just descriptions of it.
 
-| Project | Type | What it is |
-|---|---|---|
-| [`birdtag/`](./birdtag) | Team (4) | Serverless wildlife media tagging — AWS Lambda, Cognito, DynamoDB |
-| [`spotify-success-analysis/`](./spotify-success-analysis) | Solo | Statistical analysis of 114K Spotify tracks in R |
-| [`esaver/`](./esaver) | Team (4) | Android energy-saving app — Kotlin, Retrofit, Firebase |
-| [`document-extraction-pipeline/`](./document-extraction-pipeline) | Solo | OCR + pattern-matching pipeline for scanned PDFs |
-| [`ielts-mock-practice-tool/`](./ielts-mock-practice-tool) | Solo | Full IELTS mock exam, built for my own prep — React |
-| [`linkedin-banner-generator/`](./linkedin-banner-generator) | Solo | Code-based LinkedIn banner generator (HTML → exact-spec PNG) |
+**License:** see [`LICENSE`](./LICENSE) — public to view and learn from, not licensed for reuse or reproduction without permission.
+
+| Project | Type | What it is | Stack |
+|---|---|---|---|
+| [`birdtag/`](./birdtag) | Team (4) | Serverless wildlife media tagging | AWS Lambda, API Gateway, Cognito, DynamoDB, S3, Python |
+| [`spotify-success-analysis/`](./spotify-success-analysis) | Solo | Statistical analysis of 114K Spotify tracks | R, tidyverse, ggplot2 |
+| [`esaver/`](./esaver) | Team (4) | Android energy-saving app | Kotlin, Retrofit, Firebase Firestore |
+| [`document-extraction-pipeline/`](./document-extraction-pipeline) | Solo | OCR + pattern-matching pipeline for scanned PDFs | Python, pytesseract, PIL, pdf2image |
+| [`ielts-mock-practice-tool/`](./ielts-mock-practice-tool) | Solo | Full IELTS mock exam, built for my own prep | React, Vite, Web Speech API, MediaRecorder API, Recharts |
+| [`linkedin-banner-generator/`](./linkedin-banner-generator) | Solo | Code-based LinkedIn banner generator | HTML/CSS, Playwright, Node.js |
 
 ## A note on the team projects
 

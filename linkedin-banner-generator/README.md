@@ -13,9 +13,14 @@ Open it in any text editor. A few useful spots:
 - **Your name / tagline / tech pills / contact line** — search for the `.content` div
   near the bottom of the `<body>`, plain HTML you can edit directly.
 - **The "aka Female Photon..." signature** — the `.signature` div, right after `.content`.
-- **Colors** — all colors are hex values inline in the `<style>` block at the top
-  (matches your portfolio site's palette: deep purple `#100D18` background, `#C4A6FB` /
-  `#A78BFA` / `#EDE4FF` accents).
+- **Colors** — all colors are hex values inline in the `<style>` block at the top,
+  matching the portfolio site's full accent palette (not just one hue): deep purple
+  `#0D0A16` background, with coral `#FF6F5E`, amber `#FFCB73`, teal `#2DD4BF`, and
+  violet `#C4A6FB` used across the name gradient, tech pills, and meteor streaks.
+- **Contact line** — currently shows the portfolio URL, email, LinkedIn, and GitHub in
+  that order, at a small font (13px) so all four fit on one line at the banner's
+  1584px width. Add/remove a `<span>` + `<span class="dot">·</span>` pair to change it,
+  and re-check that it still fits without wrapping after editing.
 - **The left-clear zone for your profile photo** — `.content { left: 540px; ... }`.
   Don't reduce this below ~500px — LinkedIn's mobile app renders your profile circle
   much bigger than the desktop view does, and 540px is the smallest margin that clears
