@@ -3,92 +3,98 @@
 <head>
 <meta charset="UTF-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&family=IBM+Plex+Sans:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body {
     width:1584px; height:396px; overflow:hidden;
-    background:#100D18;
+    background:#0D0A16;
     font-family:'IBM Plex Sans', sans-serif;
   }
   .banner {
     position:relative; width:1584px; height:396px;
     background:
-      radial-gradient(circle at 78% 20%, rgba(196,166,251,0.30), transparent 45%),
-      radial-gradient(circle at 92% 85%, rgba(237,228,255,0.16), transparent 45%),
-      radial-gradient(circle at 55% 90%, rgba(155,126,222,0.22), transparent 50%),
-      #100D18;
+      radial-gradient(circle at 82% 12%, rgba(255,111,94,0.38), transparent 40%),
+      radial-gradient(circle at 96% 60%, rgba(245,166,35,0.30), transparent 42%),
+      radial-gradient(circle at 68% 95%, rgba(45,212,191,0.26), transparent 45%),
+      radial-gradient(circle at 55% 40%, rgba(155,126,222,0.30), transparent 55%),
+      #0D0A16;
     overflow:hidden;
   }
 
-  /* meteor streaks - static, decorative */
-  .streak {
-    position:absolute; height:2px; border-radius:2px;
-    background:linear-gradient(90deg, transparent, rgba(196,166,251,0.9));
-    transform-origin:right center;
-  }
-  .streak.s1 { width:180px; top:70px; left:900px; transform:rotate(18deg); background:linear-gradient(90deg, transparent, rgba(196,166,251,0.85)); }
-  .streak.s2 { width:120px; top:150px; left:1180px; transform:rotate(18deg); background:linear-gradient(90deg, transparent, rgba(237,228,255,0.7)); }
-  .streak.s3 { width:150px; top:280px; left:1020px; transform:rotate(18deg); background:linear-gradient(90deg, transparent, rgba(155,126,222,0.75)); }
-  .spark { position:absolute; width:4px; height:4px; border-radius:50%; background:#EDE4FF; box-shadow:0 0 8px 2px rgba(237,228,255,0.7); }
+  /* meteor streaks - static, decorative, now colour-cycled brighter */
+  .streak { position:absolute; height:3px; border-radius:2px; transform-origin:right center; }
+  .streak.s1 { width:190px; top:64px; left:900px; transform:rotate(18deg); background:linear-gradient(90deg, transparent, #FF6F5E); }
+  .streak.s2 { width:130px; top:148px; left:1190px; transform:rotate(18deg); background:linear-gradient(90deg, transparent, #FFCB73); }
+  .streak.s3 { width:160px; top:282px; left:1010px; transform:rotate(18deg); background:linear-gradient(90deg, transparent, #2DD4BF); }
+  .spark { position:absolute; width:5px; height:5px; border-radius:50%; }
+  .spark.c1 { background:#FF6F5E; box-shadow:0 0 12px 3px rgba(255,111,94,0.8); }
+  .spark.c2 { background:#FFCB73; box-shadow:0 0 12px 3px rgba(255,203,115,0.8); }
+  .spark.c3 { background:#2DD4BF; box-shadow:0 0 12px 3px rgba(45,212,191,0.8); }
 
-  /* left ~340px kept clear for the circular profile photo LinkedIn overlays */
+  /* left ~540px kept clear for the circular profile photo LinkedIn overlays */
   .content {
-    position:absolute; left:540px; top:95px; right:56px; bottom:95px;
+    position:absolute; left:540px; top:88px; right:56px; bottom:88px;
     display:flex; flex-direction:column; justify-content:center;
   }
 
   .name {
     font-family:'Fraunces', serif;
-    font-weight:600;
-    font-size:68px;
-    line-height:0.95;
+    font-weight:800;
+    font-size:78px;
+    line-height:0.93;
     letter-spacing:-0.01em;
-    background:linear-gradient(100deg, #FFFFFF 35%, #A78BFA 75%, #C4A6FB);
+    background:linear-gradient(100deg, #FFFFFF 30%, #FFCB73 62%, #FF6F5E 88%);
     -webkit-background-clip:text; background-clip:text; color:transparent;
-    margin-bottom:12px;
+    margin-bottom:14px;
   }
 
   .tagline {
     font-family:'IBM Plex Sans', sans-serif;
-    font-weight:500;
-    font-size:21px;
-    color:#E7DFF7;
-    margin-bottom:18px;
+    font-weight:600;
+    font-size:23px;
+    color:#F3EEFA;
+    margin-bottom:20px;
   }
-  .tagline b { color:#C4A6FB; font-weight:600; }
+  .tagline b { color:#2DD4BF; font-weight:700; }
 
   .stack {
-    display:flex; gap:9px; margin-bottom:20px; flex-wrap:wrap;
+    display:flex; gap:10px; margin-bottom:22px; flex-wrap:wrap;
   }
   .pill {
     font-family:'IBM Plex Mono', monospace;
-    font-size:13px;
-    color:#EDE4FF;
-    border:1px solid rgba(237,228,255,0.35);
-    background:rgba(255,255,255,0.06);
-    padding:5px 13px;
+    font-weight:600;
+    font-size:14px;
+    color:#0D0A16;
+    background:#F3EEFA;
+    padding:6px 15px;
     border-radius:20px;
   }
+  .pill.c-coral { background:#FF6F5E; color:#1B1130; }
+  .pill.c-amber { background:#FFCB73; color:#1B1130; }
+  .pill.c-teal { background:#2DD4BF; color:#0D0A16; }
+  .pill.c-violet { background:#C4A6FB; color:#1B1130; }
 
   .contact-row {
-    display:flex; gap:24px; align-items:center;
+    display:flex; gap:26px; align-items:center;
   }
   .contact-row span {
     font-family:'IBM Plex Mono', monospace;
-    font-size:15px;
-    color:#B9AACF;
+    font-weight:600;
+    font-size:16px;
+    color:#F3EEFA;
   }
-  .contact-row .dot { color:#9E90B8; }
+  .contact-row .dot { color:#FFCB73; }
 
   .signature {
-    position:absolute; right:56px; bottom:32px;
+    position:absolute; right:56px; bottom:30px;
     font-family:'IBM Plex Mono', monospace;
+    font-weight:500;
     font-size:14px;
-    color:#9E90B8;
+    color:#B9AACF;
     letter-spacing:0.02em;
   }
-  .signature b { color:#C4A6FB; }
+  .signature b { color:#FF6F5E; }
 </style>
 </head>
 <body>
@@ -96,18 +102,18 @@
     <div class="streak s1"></div>
     <div class="streak s2"></div>
     <div class="streak s3"></div>
-    <div class="spark" style="top:68px; left:1080px;"></div>
-    <div class="spark" style="top:148px; left:1300px;"></div>
-    <div class="spark" style="top:278px; left:1170px;"></div>
+    <div class="spark c1" style="top:62px; left:1080px;"></div>
+    <div class="spark c2" style="top:146px; left:1310px;"></div>
+    <div class="spark c3" style="top:280px; left:1160px;"></div>
 
     <div class="content">
       <div class="name">Madhumitha<br>Challa</div>
       <div class="tagline"><b>Cloud &amp; Systems Engineering</b> · Data · IT Support</div>
       <div class="stack">
-        <div class="pill">AWS</div>
-        <div class="pill">Azure</div>
-        <div class="pill">Oracle Cloud HCM</div>
-        <div class="pill">Microsoft 365</div>
+        <div class="pill c-coral">AWS</div>
+        <div class="pill c-amber">Azure</div>
+        <div class="pill c-teal">Oracle Cloud HCM</div>
+        <div class="pill c-violet">Microsoft 365</div>
         <div class="pill">Python</div>
       </div>
       <div class="contact-row">
