@@ -5,7 +5,18 @@ It's plain HTML/CSS (`banner.html`) rendered to an exact 1584×396px PNG using a
 script (`render.js`) — no design tool involved, so every pixel is exactly where the code
 puts it.
 
-## To edit the banner
+## Live editor (no code editing needed)
+
+[**`editor.html`**](./editor.html) is an in-browser version of the banner you can edit
+directly — click any text (name, tagline, pills, contact line, signature) to change it
+in place, add/remove tech pills, then click **Download PNG**, **Download JPEG**, or
+**Download PDF** to export, all sized to LinkedIn's exact 1584×396 spec. Runs entirely
+client-side (via [html2canvas](https://html2canvas.hertzen.com/) and
+[jsPDF](https://github.com/parallax/jsPDF), loaded from cdnjs) — nothing is uploaded
+anywhere. Open it directly in a browser, or via GitHub Pages once this repo has Pages
+enabled.
+
+## To edit the banner via code
 
 Everything — text, colors, fonts, layout, the meteor streaks — lives in `banner.html`.
 Open it in any text editor. A few useful spots:
