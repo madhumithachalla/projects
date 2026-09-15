@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>LinkedIn Banner Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:#100D18; color:#F3EEFA; font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh; padding:32px 20px 60px;
+  }
+  .wrap { max-width:1620px; margin:0 auto; }
+  h1 { font-family:'Fraunces', serif; font-weight:700; font-size:28px; margin-bottom:6px; }
+  .sub { color:#9E90B8; font-size:14px; margin-bottom:26px; }
+  .sub b { color:#2DD4BF; }
+
+  .toolbar {
+    display:flex; gap:12px; flex-wrap:wrap; margin-bottom:22px; align-items:center;
+  }
+  .btn {
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:600;
+    text-transform:uppercase; letter-spacing:0.04em; padding:11px 18px;
+    border-radius:6px; border:1px solid rgba(255,255,255,0.16); background:#1C1729;
+    color:#F3EEFA; cursor:pointer; transition:transform .15s ease, border-color .15s ease;
+  }
+  .btn:hover { border-color:#2DD4BF; transform:translateY(-1px); }
+  .btn.primary { background:#FFCB73; color:#1B1130; border-color:#FFCB73; }
+  .btn.primary:hover { border-color:#FF6F5E; }
+  .btn.ghost { background:transparent; }
+  .btn:disabled { opacity:0.5; cursor:wait; transform:none; }
+
+  .status { font-family:'IBM Plex Mono', monospace; font-size:12px; color:#9E90B8; }
+  .status.ok { color:#4ADE80; }
+
+  /* ---- banner preview + editing ---- */
+  .stage {
+    width:100%; overflow-x:auto; padding-bottom:8px;
+    border:1px solid rgba(255,255,255,0.12); border-radius:10px; background:#000;
+  }
+  .banner {
+    position:relative; width:1584px; height:396px; margin:0 auto;
+    background:
+      radial-gradient(circle at 82% 12%, rgba(255,111,94,0.38), transparent 40%),
+      radial-gradient(circle at 96% 60%, rgba(245,166,35,0.30), transparent 42%),
+      radial-gradient(circle at 68% 95%, rgba(45,212,191,0.26), transparent 45%),
+      radial-gradient(circle at 55% 40%, rgba(155,126,222,0.30), transparent 55%),
+      #0D0A16;
+    overflow:hidden; flex-shrink:0;
+  }
+  .streak { position:absolute; height:3px; border-radius:2px; transform-origin:right center; }
+  .streak.s1 { width:190px; top:64px; left:900px; transform:rotate(18deg); background:linear-gradient(90deg, transparent, #FF6F5E); }
+  .streak.s2 { width:130px; top:148px; left:1190px; transform:rotate(18deg); background:linear-gradient(90deg, transparent, #FFCB73); }
+  .streak.s3 { width:160px; top:282px; left:1010px; transform:rotate(18deg); background:linear-gradient(90deg, transparent, #2DD4BF); }
+  .spark { position:absolute; width:5px; height:5px; border-radius:50%; }
+  .spark.c1 { background:#FF6F5E; box-shadow:0 0 12px 3px rgba(255,111,94,0.8); }
+  .spark.c2 { background:#FFCB73; box-shadow:0 0 12px 3px rgba(255,203,115,0.8); }
+  .spark.c3 { background:#2DD4BF; box-shadow:0 0 12px 3px rgba(45,212,191,0.8); }
+
+  .content {
+    position:absolute; left:540px; top:88px; right:56px; bottom:88px;
+    display:flex; flex-direction:column; justify-content:center;
+  }
+  .name {
+    font-family:'Fraunces', serif; font-weight:800; font-size:78px; line-height:0.93;
+    letter-spacing:-0.01em;
+    background:linear-gradient(100deg, #FFFFFF 30%, #FFCB73 62%, #FF6F5E 88%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    margin-bottom:14px; -webkit-text-fill-color:transparent;
+  }
+  .tagline { font-family:'IBM Plex Sans', sans-serif; font-weight:600; font-size:23px; color:#F3EEFA; margin-bottom:20px; }
+  .tagline b { color:#2DD4BF; font-weight:700; }
+  .stack { display:flex; gap:10px; margin-bottom:22px; flex-wrap:wrap; }
+  .pill-wrap { position:relative; display:inline-flex; }
+  .pill {
+    font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:14px; color:#0D0A16;
+    background:#F3EEFA; padding:6px 15px; border-radius:20px; outline:none; min-width:24px;
+  }
+  .pill.c-coral { background:#FF6F5E; color:#1B1130; }
+  .pill.c-amber { background:#FFCB73; color:#1B1130; }
+  .pill.c-teal { background:#2DD4BF; color:#0D0A16; }
+  .pill.c-violet { background:#C4A6FB; color:#1B1130; }
+  .pill-remove {
+    position:absolute; top:-8px; right:-8px; width:18px; height:18px; border-radius:50%;
+    background:#FF6F5E; color:#fff; border:2px solid #0D0A16; font-size:11px; line-height:14px;
+    text-align:center; cursor:pointer; display:none; font-family:'IBM Plex Sans';
+  }
+  .pill-wrap:hover .pill-remove { display:block; }
+
+  .contact-row { display:flex; gap:13px; align-items:center; flex-wrap:nowrap; }
+  .contact-row span { font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:13px; color:#F3EEFA; white-space:nowrap; outline:none; }
+  .contact-row .dot { color:#FFCB73; }
+  .signature { position:absolute; right:56px; bottom:30px; font-family:'IBM Plex Mono', monospace; font-weight:500; font-size:14px; color:#B9AACF; letter-spacing:0.02em; outline:none; }
+  .signature b { color:#FF6F5E; }
+
+  [contenteditable="true"] { cursor:text; }
+  [contenteditable="true"]:hover { box-shadow:0 0 0 1px rgba(255,255,255,0.35); }
+  [contenteditable="true"]:focus { box-shadow:0 0 0 2px #2DD4BF; }
+
+  .hint { margin-top:16px; font-size:13px; color:#9E90B8; }
+  .hint code { font-family:'IBM Plex Mono', monospace; background:#1C1729; padding:2px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LinkedIn Banner Editor</h1>
+  <p class="sub">Click any text on the banner below to edit it in place. Then export as <b>PNG</b>, <b>JPEG</b>, or <b>PDF</b> — sized to LinkedIn's exact 1584×396 spec.</p>
+
+  <div class="toolbar">
+    <button class="btn" id="add-pill">+ Add pill</button>
+    <button class="btn primary" id="dl-png">Download PNG</button>
+    <button class="btn primary" id="dl-jpeg">Download JPEG</button>
+    <button class="btn primary" id="dl-pdf">Download PDF</button>
+    <span class="status" id="status"></span>
+  </div>
+
+  <div class="stage">
+    <div class="banner" id="banner">
+      <div class="streak s1"></div>
+      <div class="streak s2"></div>
+      <div class="streak s3"></div>
+      <div class="spark c1" style="top:62px; left:1080px;"></div>
+      <div class="spark c2" style="top:146px; left:1310px;"></div>
+      <div class="spark c3" style="top:280px; left:1160px;"></div>
+
+      <div class="content">
+        <div class="name" contenteditable="true" spellcheck="false">Madhumitha<br>Challa</div>
+        <div class="tagline" contenteditable="true" spellcheck="false"><b>Cloud &amp; Systems Engineering</b> · Data · IT Support</div>
+        <div class="stack" id="pill-stack">
+          <div class="pill-wrap"><div class="pill c-coral" contenteditable="true" spellcheck="false">AWS</div><div class="pill-remove" title="Remove">×</div></div>
+          <div class="pill-wrap"><div class="pill c-amber" contenteditable="true" spellcheck="false">Azure</div><div class="pill-remove" title="Remove">×</div></div>
+          <div class="pill-wrap"><div class="pill c-teal" contenteditable="true" spellcheck="false">Oracle Cloud HCM</div><div class="pill-remove" title="Remove">×</div></div>
+          <div class="pill-wrap"><div class="pill c-violet" contenteditable="true" spellcheck="false">Microsoft 365</div><div class="pill-remove" title="Remove">×</div></div>
+          <div class="pill-wrap"><div class="pill" contenteditable="true" spellcheck="false">Python</div><div class="pill-remove" title="Remove">×</div></div>
+        </div>
+        <div class="contact-row">
+          <span contenteditable="true" spellcheck="false">madhumithachalla.github.io</span>
+          <span class="dot">·</span>
+          <span contenteditable="true" spellcheck="false">rchmadhumitha@gmail.com</span>
+          <span class="dot">·</span>
+          <span contenteditable="true" spellcheck="false">linkedin.com/in/madhumitha-challa</span>
+          <span class="dot">·</span>
+          <span contenteditable="true" spellcheck="false">github.com/MadhumithaChalla</span>
+        </div>
+      </div>
+
+      <div class="signature" contenteditable="true" spellcheck="false">aka <b>Female Photon</b> ✦ writing &amp; singing</div>
+    </div>
+  </div>
+
+  <p class="hint">Runs entirely in your browser — nothing is uploaded anywhere. To start over, just reload the page. The source design (non-editable, for regenerating via script) lives in <code>banner.html</code>.</p>
+</div>
+
+<script>
+  const PILL_CLASSES = ['c-coral', 'c-amber', 'c-teal', 'c-violet', ''];
+
+  document.getElementById('add-pill').addEventListener('click', () => {
+    const stack = document.getElementById('pill-stack');
+    const count = stack.querySelectorAll('.pill').length;
+    const cls = PILL_CLASSES[count % PILL_CLASSES.length];
+    const wrap = document.createElement('div');
+    wrap.className = 'pill-wrap';
+    wrap.innerHTML = `<div class="pill ${cls}" contenteditable="true" spellcheck="false">New</div><div class="pill-remove" title="Remove">×</div>`;
+    stack.appendChild(wrap);
+    wrap.querySelector('.pill-remove').addEventListener('click', () => wrap.remove());
+    const p = wrap.querySelector('.pill');
+    p.focus();
+    document.execCommand('selectAll', false, null);
+  });
+
+  document.querySelectorAll('.pill-remove').forEach(btn => {
+    btn.addEventListener('click', () => btn.closest('.pill-wrap').remove());
+  });
+
+  function setStatus(msg, ok) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status' + (ok ? ' ok' : '');
+  }
+
+  async function renderCanvas() {
+    // Blur any active contenteditable so its focus outline doesn't get captured
+    if (document.activeElement) document.activeElement.blur();
+    const banner = document.getElementById('banner');
+    const raw = await html2canvas(banner, {
+      width: 1584, height: 396, scale: 2, backgroundColor: '#0D0A16', useCORS: true
+    });
+    // Downscale from the crisp 2x render to LinkedIn's exact 1584x396 spec
+    const out = document.createElement('canvas');
+    out.width = 1584; out.height = 396;
+    out.getContext('2d').drawImage(raw, 0, 0, 1584, 396);
+    return out;
+  }
+
+  function download(dataUrl, filename) {
+    const a = document.createElement('a');
+    a.href = dataUrl; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  async function withButton(btn, fn) {
+    btn.disabled = true;
+    setStatus('Rendering…', false);
+    try {
+      await fn();
+      setStatus('Done ✓', true);
+    } catch (err) {
+      console.error(err);
+      setStatus('Something went wrong — see console.', false);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById('dl-png').addEventListener('click', (e) => withButton(e.target, async () => {
+    const canvas = await renderCanvas();
+    download(canvas.toDataURL('image/png'), 'madhumitha_linkedin_banner.png');
+  }));
+
+  document.getElementById('dl-jpeg').addEventListener('click', (e) => withButton(e.target, async () => {
+    const canvas = await renderCanvas();
+    download(canvas.toDataURL('image/jpeg', 0.95), 'madhumitha_linkedin_banner.jpg');
+  }));
+
+  document.getElementById('dl-pdf').addEventListener('click', (e) => withButton(e.target, async () => {
+    const canvas = await renderCanvas();
+    const { jsPDF } = window.jspdf;
+    // Page sized to match the banner's exact aspect ratio (1584x396 px @ 96dpi -> pt)
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: [1188, 297] });
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 1188, 297);
+    pdf.save('madhumitha_linkedin_banner.pdf');
+  }));
+</script>
+</body>
+</html>
