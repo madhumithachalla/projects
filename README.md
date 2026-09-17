@@ -14,6 +14,17 @@ and resume — real code, not just descriptions of it.
 | [`ielts-mock-practice-tool/`](./ielts-mock-practice-tool) | Solo | Full IELTS mock exam, built for my own prep | React, Vite, Web Speech API, MediaRecorder API, Recharts |
 | [`linkedin-banner-generator/`](./linkedin-banner-generator) | Solo | Code-based LinkedIn banner generator | HTML/CSS, Playwright, Node.js |
 
+## How these were built
+
+The direction, content, and decisions behind every project here are mine — what to
+build, what the real numbers and results are, what each write-up says, and (for the
+team projects) exactly which piece was mine to own. I used an AI coding assistant
+(Claude) as an implementation tool on top of that: turning direction into working code,
+fixing bugs, and quickly "vibe coding" a rough version to validate an idea before
+refining it — not deciding unprompted what these projects should be. Where a demo is a
+fresh reconstruction rather than real team code (see below), that's a deliberate
+academic-integrity call I made, not a limitation of the tooling.
+
 ## A note on the team projects
 
 BirdTag and ESaver were both group assignments at Monash University. Each folder contains

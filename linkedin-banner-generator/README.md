@@ -1,9 +1,37 @@
 # LinkedIn banner — source
 
-This is the actual code behind your LinkedIn banner (`madhumitha_linkedin_banner.png`).
+**Solo personal project**
+
+This is the actual code behind my LinkedIn banner (`madhumitha_linkedin_banner.png`).
 It's plain HTML/CSS (`banner.html`) rendered to an exact 1584×396px PNG using a small
-script (`render.js`) — no design tool involved, so every pixel is exactly where the code
-puts it.
+Node.js script (`render.js`) — no design tool (Canva, Figma, etc.) involved anywhere in
+the pipeline, so every pixel is exactly where the code puts it and the whole thing is
+reproducible from source.
+
+## Why it exists
+
+Design tools make pixel-perfect, brand-consistent output slow to iterate on — every
+tweak means reopening the tool, re-exporting, and re-checking the exact 1584×396 crop.
+Building the banner as HTML/CSS instead means it shares the portfolio site's actual
+design tokens (the same accent palette, same visual language), and any change is a text
+edit plus a one-command re-render, with the browser guaranteeing pixel-accurate layout
+every time.
+
+## Architecture
+
+- **`banner.html`** is the actual banner design: pure HTML/CSS at a fixed 1584×396px
+  canvas size (LinkedIn's exact banner spec), no JavaScript. Layout, gradient meteor
+  streaks, the name treatment, tech pills, and the contact line are all CSS — nothing is
+  a raster image.
+- **`render.js`** uses [Playwright](https://playwright.dev/) to launch headless Chromium,
+  open `banner.html` at the exact banner viewport with `deviceScaleFactor: 2` (for a
+  crisp, high-DPI screenshot), wait briefly for web fonts to finish loading, then
+  screenshot the page to a PNG. This is why the output has zero design-tool artifacts —
+  it's a literal, exact screenshot of real rendered HTML/CSS, not a re-interpretation of
+  one.
+- **`editor.html`** is a separate, self-contained tool: the same banner design made
+  `contenteditable` directly in the browser, so non-technical edits (change the tagline,
+  swap a tech pill) don't require touching code at all. See below.
 
 ## Live editor (no code editing needed)
 
@@ -43,7 +71,7 @@ You'll need [Node.js](https://nodejs.org) installed, plus Playwright (a browser
 automation library) to render the HTML into a pixel-perfect image:
 
 ```bash
-cd projects/linkedin-banner
+cd projects/linkedin-banner-generator
 npm install playwright
 npx playwright install chromium
 node render.js
@@ -64,3 +92,20 @@ im.save('linkedin_banner_final.png')
 (Needs Pillow: `pip install Pillow`.)
 
 Then upload `linkedin_banner_final.png` to LinkedIn as your banner image.
+
+## Files here
+
+- `banner.html` — the actual banner design (HTML/CSS, no JS).
+- `render.js` — Playwright script that screenshots `banner.html` to a PNG.
+- `editor.html` — the live, in-browser contenteditable editor with PNG/JPEG/PDF export.
+- `madhumitha_linkedin_banner.png` — the current rendered output.
+
+## Limitations
+
+- `render.js` needs Playwright's bundled Chromium installed locally — it isn't a
+  zero-dependency script, unlike `editor.html`, which needs only a browser.
+- The 540px left-clear zone for the profile photo is tuned to LinkedIn's current profile
+  photo size and position on both desktop and mobile as of when this was built; if
+  LinkedIn changes that layout, the margin may need rechecking against a live profile.
+
+**Stack:** HTML/CSS, Node.js, Playwright (render), html2canvas + jsPDF via CDN (editor)
