@@ -13,6 +13,7 @@ and resume — real code, not just descriptions of it.
 | [`document-extraction-pipeline/`](./document-extraction-pipeline) | Solo | OCR + pattern-matching pipeline for scanned PDFs | Python, pytesseract, PIL, pdf2image |
 | [`ielts-mock-practice-tool/`](./ielts-mock-practice-tool) | Solo | Full IELTS mock exam, built for my own prep | React, Vite, Web Speech API, MediaRecorder API, Recharts |
 | [`linkedin-banner-generator/`](./linkedin-banner-generator) | Solo | Code-based LinkedIn banner generator | HTML/CSS, Playwright, Node.js |
+| [`contact-link-icons/`](./contact-link-icons) | Solo | Inline SVG icons for the portfolio's contact links | HTML, SVG |
 
 ## How these were built
 
