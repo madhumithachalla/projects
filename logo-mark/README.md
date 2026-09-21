@@ -9,12 +9,15 @@ and, in a smaller corner version, in its footer.
 
 ## How it's built
 
-The monogram is a single smooth cubic-bezier `<path>` — plain SVG, not a traced or
-scanned image, so it stays crisp at any size and needed no image editor, just
-plotting and nudging bezier control points by hand until the "M" and "C" read
-clearly inside the loop. A glowing "photon" orbits the loop continuously, trailed
-by a small fading dust trail in six colors, all driven by native SVG
-`animateMotion` following that same path — no JS animation library.
+The monogram's shape is my own handwriting: I hand-drew an M/C infinity loop and
+sent over photos of it, and the "M" and "C" you see are traced from those —
+hours of plotting and nudging cubic-bezier control points to match my actual
+pen strokes, not a font or an auto-traced vector effect. The output ships as a
+single smooth SVG `<path>` rather than an embedded scan, so it stays crisp at
+any size while still being genuinely my handwriting. A glowing "photon" orbits
+the loop continuously, trailed by a small fading dust trail in six colors, all
+driven by native SVG `animateMotion` following that same path — no JS
+animation library.
 
 The cosmic badge underneath is the same idea at a size most logos wouldn't bother
 with: a tiny Mars and Saturn rendered in flat SVG shapes and radial gradients, sitting
