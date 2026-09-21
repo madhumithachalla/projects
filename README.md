@@ -14,6 +14,7 @@ and resume — real code, not just descriptions of it.
 | [`ielts-mock-practice-tool/`](./ielts-mock-practice-tool) | Solo | Full IELTS mock exam, built for my own prep | React, Vite, Web Speech API, MediaRecorder API, Recharts |
 | [`linkedin-banner-generator/`](./linkedin-banner-generator) | Solo | Code-based LinkedIn banner generator | HTML/CSS, Playwright, Node.js |
 | [`contact-link-icons/`](./contact-link-icons) | Solo | Inline SVG icons for the portfolio's contact links | HTML, SVG |
+| [`logo-mark/`](./logo-mark) | Solo | My M/C infinity monogram + cosmic badge, used in the portfolio's nav and footer | HTML, SVG, SVG animateMotion |
 
 ## How these were built
 
