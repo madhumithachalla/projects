@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rot Clock</title>
+<style>
+:root{--bg:#f4f7f2;--card:#fff;--ink:#1d2a22;--mute:#5d6b62;--line:#dfe6dc;--green:#2e8b57;--amber:#e0a100;--red:#d64545;--accent:#1f6f4a}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select{font:inherit}
+.wrap{max-width:560px;margin:0 auto;padding:12px 16px 90px}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0}
+h1{font-size:1.3rem;margin:0}
+.tag{font-size:.8rem;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grow{flex:1}
+.btn{border:0;border-radius:10px;padding:10px 14px;background:var(--accent);color:#fff;cursor:pointer;font-weight:600}
+.btn.alt{background:#e8efe6;color:var(--ink)}
+.btn.danger{background:#fbe6e6;color:#a02727}
+.btn.sm{padding:6px 10px;font-size:.85rem}
+.btn:disabled{opacity:.5}
+input,select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fff}
+label{display:block;font-size:.85rem;color:var(--mute);margin:10px 0 4px}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:center}
+nav .in{display:flex;max-width:560px;width:100%}
+nav button{flex:1;border:0;background:none;padding:12px 4px;cursor:pointer;color:var(--mute);font-weight:600}
+nav button.on{color:var(--accent);border-top:3px solid var(--accent);padding-top:9px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#eef5ec;border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:1.25rem}
+.stat span{font-size:.75rem;color:var(--mute)}
+.item{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.ring{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.85rem;flex:none}
+.red{background:conic-gradient(var(--red) var(--p),#f3d6d6 0);color:var(--red)}
+.amber{background:conic-gradient(var(--amber) var(--p),#f6ecc9 0);color:#9a7000}
+.green{background:conic-gradient(var(--green) var(--p),#d3ebdc 0);color:var(--green)}
+.ring span{background:#fff;width:34px;height:34px;border-radius:50%;display:grid;place-items:center}
+.garden{font-size:2rem;text-align:center;letter-spacing:4px}
+.bar{height:14px;border-radius:7px;background:#e8efe6;overflow:hidden;margin:6px 0}
+.bar i{display:block;height:100%}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:80px;background:#1d2a22;color:#fff;padding:12px 16px;border-radius:12px;max-width:90%;z-index:9;font-size:.9rem}
+.err{color:#a02727;font-size:.9rem;margin-top:8px;min-height:1.2em}
+.chip{display:inline-block;padding:6px 10px;border:1px solid var(--line);border-radius:20px;background:#fff;margin:3px;cursor:pointer}
+.muted{color:var(--mute);font-size:.85rem}
+.auth{max-width:400px;margin:8vh auto 0}
+.tabs2{display:flex;gap:6px;margin-bottom:6px}
+.tabs2 button{flex:1}
+details summary{cursor:pointer;font-weight:600}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+const mem = {}; // fallback if storage blocked
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3200); }
+
+/* ---------- auth (browser-only demo: salted PBKDF2 hashes in localStorage) ---------- */
+const hex = b => [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+function rand(n){ const a=new Uint8Array(n); crypto.getRandomValues(a); return hex(a); }
+async function hashPw(pw, salt){
+  if(window.crypto && crypto.subtle){
+    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits({name:'PBKDF2', hash:'SHA-256', salt:new TextEncoder().encode(salt), iterations:100000}, key, 256);
+    return hex(bits);
+  }
+  let h = 5381; const s = salt + pw; for(let i=0;i<s.length;i++) h = ((h<<5)+h) ^ s.charCodeAt(i); return 'weak' + (h>>>0).toString(16);
+}
+const emailOk = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+async function signUp(name, email, pw){
+  email = email.trim().toLowerCase(); name = name.trim();
+  if(!name) throw new Error('Please enter your name.');
+  if(!emailOk(email)) throw new Error('Please enter a valid email.');
+  if(pw.length < 8) throw new Error('Password must be at least 8 characters.');
+  const users = store.get('rc_users', {});
+  if(users[email]) throw new Error('An account with this email already exists. Try logging in.');
+  const salt = rand(16);
+  users[email] = {name, salt, hash: await hashPw(pw, salt), created: Date.now()};
+  store.set('rc_users', users);
+  store.set('rc_session', {email});
+  return email;
+}
+async function logIn(email, pw){
+  email = email.trim().toLowerCase();
+  const u = store.get('rc_users', {})[email];
+  if(!u || (await hashPw(pw, u.salt)) !== u.hash) throw new Error('Incorrect email or password.');
+  store.set('rc_session', {email});
+  return email;
+}
+function logOut(){ store.del('rc_session'); user = null; state = null; render(); }
+function currentUser(){
+  const s = store.get('rc_session', null); if(!s) return null;
+  const u = store.get('rc_users', {})[s.email]; return u ? {email:s.email, name:u.name} : null;
+}
+
+/* ---------- data ---------- */
+// Placeholder shelf lives / weights / prices. Verify before relying on them. Not food-safety advice.
+const FOODS = [
+  {n:'Milk',e:'🥛',d:7,kg:1,p:2.2},{n:'Strawberries',e:'🍓',d:4,kg:.25,p:4.5},{n:'Bread',e:'🍞',d:5,kg:.7,p:3.5},
+  {n:'Chicken',e:'🍗',d:2,kg:.5,p:7},{n:'Spinach',e:'🥬',d:4,kg:.12,p:3},{n:'Eggs',e:'🥚',d:21,kg:.6,p:5},
+  {n:'Tomatoes',e:'🍅',d:6,kg:.4,p:4},{n:'Yoghurt',e:'🥣',d:10,kg:.5,p:3.5},{n:'Bananas',e:'🍌',d:5,kg:.7,p:3.5},
+  {n:'Cheese',e:'🧀',d:21,kg:.25,p:5},{n:'Rice (cooked)',e:'🍚',d:3,kg:.4,p:1.5},{n:'Carrots',e:'🥕',d:14,kg:.5,p:2}
+];
+const RECIPES = [
+  {n:'Spinach & egg scramble',k:['spinach','eggs','cheese'],veg:'veg',t:'10 min'},
+  {n:'Strawberry yoghurt bowl',k:['strawberries','yoghurt','bananas'],veg:'veg',t:'5 min'},
+  {n:'Chicken fried rice',k:['chicken','rice (cooked)','eggs','carrots'],veg:'no',t:'20 min'},
+  {n:'Tomato cheese toastie',k:['tomatoes','bread','cheese'],veg:'veg',t:'10 min'},
+  {n:'Banana pancakes',k:['bananas','eggs','milk'],veg:'veg',t:'15 min'},
+  {n:'Veggie fried rice (vegan)',k:['rice (cooked)','carrots','spinach','tomatoes'],veg:'vegan',t:'15 min'},
+  {n:'French toast',k:['bread','eggs','milk'],veg:'veg',t:'12 min'},
+  {n:'Creamy chicken & spinach',k:['chicken','spinach','milk'],veg:'no',t:'25 min'}
+];
+// methane: 1000g x 0.15 x 0.5 x 1.0 x 0.5 x 16/12 = 50 g CH4 per kg. Assumptions to be verified (IPCC 2006 Vol 5 Ch 3).
+const CH4_G_PER_KG = 50;
+const GWP = 28;
+
+let user = null, state = null, tab = 'fridge', authMode = 'login', filter = 'all', households = 1000;
+
+const blank = () => ({day:0, items:[], log:[], points:0, streak:0, nid:1});
+function load(){ state = store.get('rc_data_' + user.email, null) || blank(); }
+function save(){ store.set('rc_data_' + user.email, state); }
+const daysLeft = it => it.exp - state.day;
+
+/* ---------- actions ---------- */
+function addItem(f, price){
+  state.items.push({id:state.nid++, n:f.n, e:f.e||'🍽️', kg:f.kg, p:price ?? f.p, added:state.day, exp:state.day + f.d, span:f.d});
+  save();
+}
+function resolve(id, ate){
+  const i = state.items.findIndex(x=>x.id===id); if(i<0) return;
+  const it = state.items.splice(i,1)[0];
+  const pts = ate ? 10 + Math.max(0, Math.min(5, daysLeft(it))) : 0;
+  const rec = {n:it.n, kg:it.kg, p:it.p, ate, day:state.day};
+  state.log.push(rec);
+  if(ate){ state.points += pts; state.streak++; toast(`+${pts} pts · ${it.kg} kg saved · $${it.p.toFixed(2)} saved · ~${Math.round(it.kg*CH4_G_PER_KG)} g methane avoided`); }
+  else { state.streak = 0; state.points = Math.max(0, state.points - 5); toast(`Binned ${it.n}. ~${Math.round(it.kg*CH4_G_PER_KG)} g methane released if landfilled.`); }
+  save(); render();
+}
+function totals(){
+  const ate = state.log.filter(l=>l.ate), bin = state.log.filter(l=>!l.ate);
+  const sum = (a,f)=>a.reduce((s,x)=>s+f(x),0);
+  return {kg:sum(ate,x=>x.kg), money:sum(ate,x=>x.p), ch4:sum(ate,x=>x.kg)*CH4_G_PER_KG, binKg:sum(bin,x=>x.kg), binMoney:sum(bin,x=>x.p), binCh4:sum(bin,x=>x.kg)*CH4_G_PER_KG, nAte:ate.length, nBin:bin.length};
+}
+function loadSample(){
+  state = blank();
+  [['Chicken',1],['Spinach',2],['Strawberries',3],['Milk',5],['Eggs',12],['Bread',2],['Tomatoes',4],['Cheese',10]].forEach(([n,left])=>{
+    const f = FOODS.find(x=>x.n===n); addItem({...f}); const it = state.items[state.items.length-1]; it.exp = state.day + left; it.span = f.d;
+  });
+  save(); render();
+}
+
+/* ---------- views ---------- */
+function authView(){
+  const su = authMode === 'signup';
+  return `<div class="wrap auth"><div class="card">
+    <h1>🍎 Rot Clock</h1><p class="tag">Save food. Save money. Save the climate.</p>
+    <div class="tabs2"><button class="btn ${su?'alt':''} grow" data-am="login">Log in</button><button class="btn ${su?'':'alt'} grow" data-am="signup">Sign up</button></div>
+    <form id="authForm" autocomplete="on" novalidate>
+      ${su?`<label for="nm">Name</label><input id="nm" autocomplete="name" required>`:''}
+      <label for="em">Email</label><input id="em" type="email" autocomplete="email" required>
+      <label for="pw">Password ${su?'(8+ characters)':''}</label><input id="pw" type="password" autocomplete="${su?'new-password':'current-password'}" required>
+      <div class="err" id="aerr" role="alert"></div>
+      <button class="btn" style="width:100%;margin-top:6px" id="abtn">${su?'Create account':'Log in'}</button>
+    </form>
+    <p class="muted">Demo login: accounts and data stay in this browser only. Do not reuse an important password.</p>
+  </div></div>`;
+}
+function pctRing(it){
+  const d = daysLeft(it), cls = d<=1?'red':d<=3?'amber':'green';
+  const p = Math.max(5, Math.min(100, Math.round(d/it.span*100)));
+  return `<div class="ring ${cls}" style="--p:${p}%"><span>${d<0?'!':d}d</span></div>`;
+}
+function fridgeView(){
+  const t = totals(), lvl = Math.floor(state.points/100)+1;
+  const items = [...state.items].sort((a,b)=>a.exp-b.exp);
+  const wilted = items.filter(i=>daysLeft(i)<0).length + state.log.filter(l=>!l.ate).length;
+  const garden = '🌱🌿🌻🌷🌳'.match(/./gu).map((p,i)=> i < Math.max(0, 5 - wilted) ? p : '🥀').join('');
+  const goal = Math.min(5, t.nAte);
+  return `<div class="card"><div class="garden">${garden}</div>
+    <div class="row" style="justify-content:space-between"><b>Level ${lvl}</b><span>${state.points} pts · 🔥 ${state.streak} streak</span></div>
+    <div class="bar"><i style="width:${state.points%100}%;background:var(--green)"></i></div>
+    <div class="muted">Challenge: save 5 items (${goal}/5)</div></div>
+  <div class="stats">
+    <div class="stat"><b>${t.kg.toFixed(1)} kg</b><span>food saved</span></div>
+    <div class="stat"><b>$${t.money.toFixed(2)}</b><span>money saved</span></div>
+    <div class="stat"><b>${Math.round(t.ch4)} g</b><span>est. methane avoided</span></div></div>
+  <div class="card"><b>Eat first</b>
+    ${items.length ? items.map(it=>`<div class="item">${pctRing(it)}<div class="grow"><b>${it.e} ${esc(it.n)}</b><div class="muted">${daysLeft(it)<0?'Past estimate':daysLeft(it)+' day(s) left'} · $${it.p.toFixed(2)}</div></div>
+      <button class="btn sm" data-ate="${it.id}">Ate it</button><button class="btn sm danger" data-bin="${it.id}">Binned</button></div>`).join('')
+      : `<p class="muted">Your fridge is empty. Add food on the Add tab, or load sample data.</p><button class="btn alt" id="sample">Load sample data</button>`}
+  </div>`;
+}
+function addView(){
+  return `<div class="card"><b>Quick add</b><div>${FOODS.map((f,i)=>`<span class="chip" data-q="${i}">${f.e} ${f.n}</span>`).join('')}</div></div>
+  <div class="card"><b>Custom item</b>
+    <label for="cn">Food name</label><input id="cn" list="fl" placeholder="Start typing…"><datalist id="fl">${FOODS.map(f=>`<option value="${f.n}">`).join('')}</datalist>
+    <div class="row"><div class="grow"><label for="cd">Days until it spoils</label><input id="cd" type="number" min="1" max="365" value="5"></div>
+    <div class="grow"><label for="cp">Price ($)</label><input id="cp" type="number" min="0" step="0.1" value="3"></div></div>
+    <div class="err" id="cerr"></div><button class="btn" id="addc" style="margin-top:8px">Add to fridge</button>
+    <p class="muted">Estimated from typical shelf-life guidance. Not a food-safety guarantee.</p></div>`;
+}
+function cookView(){
+  const have = state.items.map(i=>({k:i.n.toLowerCase(), d:daysLeft(i)}));
+  const scored = RECIPES.filter(r=>filter==='all'||(filter==='veg'&&r.veg!=='no')||(filter==='vegan'&&r.veg==='vegan')).map(r=>{
+    const m = r.k.filter(k=>have.some(h=>h.k===k)); const urgent = m.reduce((s,k)=>s+Math.max(0,5-have.find(h=>h.k===k).d),0);
+    return {...r, m, miss:r.k.filter(k=>!m.includes(k)), urgent};
+  }).filter(r=>r.m.length).sort((a,b)=>b.urgent-a.urgent || b.m.length-a.m.length);
+  const plan = scored.slice(0,3);
+  return `<div class="row"><select id="flt" style="width:auto"><option value="all">All recipes</option><option value="veg">Vegetarian</option><option value="vegan">Vegan</option></select></div>
+  <div class="card"><b>Rescue meals</b>${scored.length?scored.map(r=>`<div class="item"><div class="grow"><b>${esc(r.n)}</b> <span class="muted">${r.t}</span>
+    <div class="muted">Uses: ${r.m.join(', ')}${r.miss.length?' · Missing: '+r.miss.join(', '):''}</div></div><button class="btn sm" data-cook="${esc(r.n)}">Cooked it</button></div>`).join(''):'<p class="muted">Add food to see rescue meals.</p>'}</div>
+  <div class="card"><b>3-day plan</b>${plan.length?plan.map((r,i)=>`<div class="item"><b>Day ${i+1}</b><span class="grow">${esc(r.n)}</span></div>`).join(''):'<p class="muted">Nothing to plan yet.</p>'}</div>
+  <div class="card"><b>Before you shop</b><label for="sc">Type an item to check if you already have it</label><input id="sc" placeholder="e.g. milk"><div id="scr" class="muted" style="margin-top:6px"></div></div>`;
+}
+function impactView(){
+  const t = totals(), mx = Math.max(1, t.ch4, t.binCh4);
+  return `<div class="card"><b>Methane (estimated)</b>
+    <div class="muted">Avoided: ${Math.round(t.ch4)} g CH₄ (≈ ${(t.ch4*GWP/1000).toFixed(2)} kg CO₂e over 100 yrs)</div><div class="bar"><i style="width:${t.ch4/mx*100}%;background:var(--green)"></i></div>
+    <div class="muted">Released (binned): ${Math.round(t.binCh4)} g CH₄</div><div class="bar"><i style="width:${t.binCh4/mx*100}%;background:var(--red)"></i></div></div>
+  <div class="card"><b>Where the grocery money went</b>
+    <div class="row" style="justify-content:space-between"><span>Eaten in time</span><b>$${t.money.toFixed(2)}</b></div>
+    <div class="row" style="justify-content:space-between"><span>Binned</span><b>$${t.binMoney.toFixed(2)}</b></div></div>
+  <div class="card"><b>If more households did this</b><div class="muted" id="hhl">${households.toLocaleString()} households</div>
+    <input type="range" id="hh" min="100" max="100000" step="100" value="${households}">
+    <div style="margin-top:6px">≈ <b id="hhv">${Math.round(households*t.ch4/1000*(52/Math.max(1,state.day/7||1))).toLocaleString()} kg</b> CH₄ avoided per year at your current rate</div>
+    <p class="muted">Simple scaling of your own results. Illustrative only.</p></div>
+  <details class="card"><summary>Assumptions</summary>
+    <p class="muted">Methane per kg of landfilled food: 1000 g × 0.15 (carbon share) × 0.5 (decomposes) × 1.0 (landfill factor) × 0.5 (CH₄ share) × 16/12 = 50 g CH₄/kg. Warming factor 28 (100-yr). Landfill gas capture assumed 0%. Shelf lives, weights and prices are placeholders. All figures are estimates still being checked against IPCC 2006 Vol. 5 Ch. 3 and AR5.</p></details>
+  <div class="card row"><button class="btn alt" id="sample">Load sample data</button><button class="btn alt" id="empty">Start empty</button></div>`;
+}
+function appView(){
+  const body = {fridge:fridgeView, add:addView, cook:cookView, impact:impactView}[tab]();
+  return `<div class="wrap"><header><div><h1>🍎 Rot Clock</h1><div class="tag">Hi ${esc(user.name)} · Day ${state.day}</div></div>
+    <div class="row"><button class="btn alt sm" id="next">Next day ▶</button><button class="btn alt sm" id="out">Log out</button></div></header>${body}</div>
+    <nav><div class="in">${[['fridge','🧊 Fridge'],['add','➕ Add'],['cook','🍳 Cook'],['impact','🌍 Impact']].map(([k,l])=>`<button data-tab="${k}" class="${tab===k?'on':''}">${l}</button>`).join('')}</div></nav>`;
+}
+
+/* ---------- render + events ---------- */
+function render(){
+  const app = $('#app');
+  if(!user){ app.innerHTML = authView(); bindAuth(); return; }
+  app.innerHTML = appView(); bindApp();
+}
+function bindAuth(){
+  document.querySelectorAll('[data-am]').forEach(b=>b.onclick=()=>{authMode=b.dataset.am; render();});
+  $('#authForm').onsubmit = async e=>{
+    e.preventDefault(); const btn=$('#abtn'); btn.disabled=true; $('#aerr').textContent='';
+    try{
+      const em=$('#em').value, pw=$('#pw').value;
+      const email = authMode==='signup' ? await signUp($('#nm').value, em, pw) : await logIn(em, pw);
+      user = currentUser(); load(); tab='fridge'; render();
+    }catch(err){ $('#aerr').textContent = err.message; btn.disabled=false; }
+  };
+}
+function bindApp(){
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab; render();});
+  $('#out').onclick = logOut;
+  $('#next').onclick = ()=>{ state.day++; save(); const n=state.items.filter(i=>daysLeft(i)<0).length; if(n) toast(`${n} item(s) past their estimate. Eat or bin them.`); render(); };
+  document.querySelectorAll('[data-ate]').forEach(b=>b.onclick=()=>resolve(+b.dataset.ate,true));
+  document.querySelectorAll('[data-bin]').forEach(b=>b.onclick=()=>resolve(+b.dataset.bin,false));
+  document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{ const f=FOODS[+b.dataset.q]; addItem({...f}); toast(`${f.e} ${f.n} added. Clock started.`); });
+  const s=$('#sample'); if(s) s.onclick=loadSample;
+  const em=$('#empty'); if(em) em.onclick=()=>{ if(confirm('Clear all your fridge data?')){ state=blank(); save(); render(); } };
+  const ac=$('#addc'); if(ac) ac.onclick=()=>{
+    const n=$('#cn').value.trim(), d=+$('#cd').value, p=+$('#cp').value;
+    if(!n) return $('#cerr').textContent='Enter a food name.';
+    if(!(d>=1)) return $('#cerr').textContent='Days must be 1 or more.';
+    if(!(p>=0)) return $('#cerr').textContent='Price cannot be negative.';
+    const known=FOODS.find(f=>f.n.toLowerCase()===n.toLowerCase());
+    addItem({n:known?known.n:n, e:known?known.e:'🍽️', d, kg:known?known.kg:.4}, p); toast(`${n} added.`); $('#cn').value='';
+  };
+  const fl=$('#flt'); if(fl){ fl.value=filter; fl.onchange=()=>{filter=fl.value; render();}; }
+  document.querySelectorAll('[data-cook]').forEach(b=>b.onclick=()=>{
+    const r=RECIPES.find(x=>x.n===b.dataset.cook); const used=state.items.filter(i=>r.k.includes(i.n.toLowerCase())).sort((a,c)=>a.exp-c.exp);
+    used.forEach(it=>resolve(it.id,true));
+  });
+  const sc=$('#sc'); if(sc) sc.oninput=()=>{ const q=sc.value.trim().toLowerCase(); const hit=q&&state.items.filter(i=>i.n.toLowerCase().includes(q));
+    $('#scr').textContent = !q?'':hit.length?`You already have ${hit.map(h=>h.n+' ('+daysLeft(h)+'d left)').join(', ')}. Skip it for now.`:'Not in your fridge. Go ahead.'; };
+  const hh=$('#hh'); if(hh) hh.oninput=()=>{households=+hh.value; const t=totals(); $('#hhl').textContent=households.toLocaleString()+' households'; $('#hhv').textContent=Math.round(households*t.ch4/1000*(52/Math.max(1,state.day/7||1))).toLocaleString()+' kg'; };
+}
+
+user = currentUser(); if(user) load();
+render();
+</script>
+</body>
+</html>
