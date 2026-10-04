@@ -56,6 +56,20 @@ input{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;ba
 .err{color:var(--red);font-size:.9rem;min-height:1.3em;margin-top:8px}
 .tabs2{display:flex;gap:6px;margin:14px 0 4px}.tabs2 button{flex:1}
 .applied{color:var(--green);font-weight:600}
+
+.item{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.ring{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.8rem;flex:none}
+.ring span{background:var(--card);width:36px;height:36px;border-radius:50%;display:grid;place-items:center}
+.r-red{background:conic-gradient(var(--red) var(--p),#3a1f1c 0);color:var(--red)}
+.r-amber{background:conic-gradient(var(--amber) var(--p),#3a2f10 0);color:var(--amber)}
+.r-green{background:conic-gradient(var(--green) var(--p),#12301f 0);color:var(--green)}
+.chip{display:inline-block;padding:7px 12px;border:1px solid var(--line);border-radius:20px;background:var(--card2);margin:3px;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.garden{font-size:2rem;text-align:center;letter-spacing:4px;margin:4px 0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;background:#e8eef9;color:#0b1220;padding:12px 16px;border-radius:12px;max-width:92%;z-index:9;font-size:.9rem;font-weight:600}
+.pbar{height:10px;border-radius:5px;background:#1c2842;overflow:hidden;margin:6px 0}.pbar i{display:block;height:100%;background:var(--green)}
+select{padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card2)}
 @media(max-width:640px){td,th{padding:10px 6px}}
 </style>
 </head>
@@ -176,6 +190,64 @@ function cur(){ // current (applied-aware) view
   return {savedKg,rev,n:apc.length,...t};
 }
 
+
+/* ---------- household fridge (Rot Clock) ---------- */
+const FOODS=[{n:'Milk',e:'🥛',d:7,kg:1,p:2.2},{n:'Strawberries',e:'🍓',d:4,kg:.25,p:4.5},{n:'Bread',e:'🍞',d:5,kg:.7,p:3.5},{n:'Chicken',e:'🍗',d:2,kg:.5,p:7},{n:'Spinach',e:'🥬',d:4,kg:.12,p:3},{n:'Eggs',e:'🥚',d:21,kg:.6,p:5},{n:'Tomatoes',e:'🍅',d:6,kg:.4,p:4},{n:'Yoghurt',e:'🥣',d:10,kg:.5,p:3.5},{n:'Bananas',e:'🍌',d:5,kg:.7,p:3.5},{n:'Cheese',e:'🧀',d:21,kg:.25,p:5},{n:'Rice (cooked)',e:'🍚',d:3,kg:.4,p:1.5},{n:'Carrots',e:'🥕',d:14,kg:.5,p:2}];
+const RECIPES=[{n:'Spinach & egg scramble',k:['spinach','eggs','cheese'],v:'veg',t:'10 min'},{n:'Strawberry yoghurt bowl',k:['strawberries','yoghurt','bananas'],v:'veg',t:'5 min'},{n:'Chicken fried rice',k:['chicken','rice (cooked)','eggs','carrots'],v:'no',t:'20 min'},{n:'Tomato cheese toastie',k:['tomatoes','bread','cheese'],v:'veg',t:'10 min'},{n:'Banana pancakes',k:['bananas','eggs','milk'],v:'veg',t:'15 min'},{n:'Veggie fried rice (vegan)',k:['rice (cooked)','carrots','spinach','tomatoes'],v:'vegan',t:'15 min'},{n:'French toast',k:['bread','eggs','milk'],v:'veg',t:'12 min'},{n:'Creamy chicken & spinach',k:['chicken','spinach','milk'],v:'no',t:'25 min'}];
+let fr=null,rfilter='all';
+const blankFr=()=>({day:0,items:[],log:[],points:0,streak:0,nid:1});
+const loadFr=()=>{fr=store.get('ss_fridge_'+user.email,null)||blankFr()};
+const saveFr=()=>store.set('ss_fridge_'+user.email,fr);
+const left=it=>it.exp-fr.day;
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3400)}
+function addItem(f,price){fr.items.push({id:fr.nid++,n:f.n,e:f.e||'🍽️',kg:f.kg,p:price??f.p,exp:fr.day+f.d,span:f.d,warm:0});saveFr()}
+function resolveItem(id,ate){
+  const i=fr.items.findIndex(x=>x.id===id);if(i<0)return;const it=fr.items.splice(i,1)[0];
+  fr.log.push({n:it.n,kg:it.kg,p:it.p,ate});
+  if(ate){const pts=10+Math.max(0,Math.min(5,Math.floor(left(it))));fr.points+=pts;fr.streak++;toast(`+${pts} pts · ${it.kg} kg saved · $${it.p.toFixed(2)} · ~${Math.round(it.kg*CH4_G_PER_KG)} g methane avoided`)}
+  else{fr.streak=0;fr.points=Math.max(0,fr.points-5);toast(`Binned ${it.n}: ~${Math.round(it.kg*CH4_G_PER_KG)} g methane if landfilled`)}
+  saveFr();render();
+}
+function leftOut(id){ // shelf-twin tie-in: warm hours cut dynamic life using the same penalty as the retail model
+  const it=fr.items.find(x=>x.id===id);if(!it)return;it.warm+=4;it.exp-=PEN*4;saveFr();toast(`${it.n} left out 4 h: life cut by ${(PEN*4).toFixed(2)} d`);render();
+}
+function frTotals(){
+  const a=fr.log.filter(l=>l.ate),b=fr.log.filter(l=>!l.ate),sum=(x,f)=>x.reduce((s,y)=>s+f(y),0);
+  return{kg:sum(a,x=>x.kg),money:sum(a,x=>x.p),ch4:sum(a,x=>x.kg)*CH4_G_PER_KG,binKg:sum(b,x=>x.kg),binMoney:sum(b,x=>x.p),binCh4:sum(b,x=>x.kg)*CH4_G_PER_KG,n:a.length}
+}
+function sampleFr(){fr=blankFr();[['Chicken',1],['Spinach',2],['Strawberries',3],['Milk',5],['Eggs',12],['Bread',2],['Tomatoes',4],['Cheese',10]].forEach(([n,l])=>{const f=FOODS.find(x=>x.n===n);addItem({...f});const it=fr.items[fr.items.length-1];it.exp=l;it.span=f.d});saveFr();render()}
+
+function fridgeView(){
+  const t=frTotals(),lvl=Math.floor(fr.points/100)+1,items=[...fr.items].sort((a,b)=>a.exp-b.exp);
+  const wilted=items.filter(i=>left(i)<0).length+fr.log.filter(l=>!l.ate).length;
+  const garden=Array.from('🌱🌿🌻🌷🌳').map((p,i)=>i<Math.max(0,5-wilted)?p:'🥀').join('');
+  const have=items.map(i=>({k:i.n.toLowerCase(),d:left(i)}));
+  const rec=RECIPES.filter(r=>rfilter==='all'||(rfilter==='veg'&&r.v!=='no')||(rfilter==='vegan'&&r.v==='vegan')).map(r=>{const m=r.k.filter(k=>have.some(h=>h.k===k));return{...r,m,miss:r.k.filter(k=>!m.includes(k)),u:m.reduce((s,k)=>s+Math.max(0,5-have.find(h=>h.k===k).d),0)}}).filter(r=>r.m.length).sort((a,b)=>b.u-a.u||b.m.length-a.m.length);
+  return `<h1>Your fridge, on a clock</h1><p class="lede">The household side of ShelfShift. Same idea: printed dates are only a guess, so each item gets a countdown, and food left out of the fridge loses life using the same temperature penalty as the retail model.</p>
+  <div class="head"><span class="badge mono">Day ${fr.day}</span><div><button class="btn sm ghost" id="nextDay">Next day ▶</button> <button class="btn sm ghost" id="sampleFr">Load sample</button> <button class="btn sm ghost" id="emptyFr">Start empty</button></div></div>
+  <div class="card"><div class="garden">${garden}</div><div class="rowkv"><b>Level ${lvl}</b><span>${fr.points} pts · 🔥 ${fr.streak} streak</span></div><div class="pbar"><i style="width:${fr.points%100}%"></i></div></div>
+  <div class="stats"><div class="card kpi"><b style="font-size:1.4rem">${t.kg.toFixed(1)} kg</b><span>food saved</span></div><div class="card kpi"><b style="font-size:1.4rem">$${t.money.toFixed(2)}</b><span>money saved</span></div><div class="card kpi"><b style="font-size:1.4rem">${Math.round(t.ch4)} g</b><span>est. methane avoided</span></div></div>
+  <div class="card"><b>Eat first</b>${items.length?items.map(it=>{const d=left(it),c=d<=1?'r-red':d<=3?'r-amber':'r-green',p=Math.max(5,Math.min(100,Math.round(d/it.span*100)));
+   return `<div class="item"><div class="ring ${c}" style="--p:${p}%"><span>${d<0?'!':Math.max(0,Math.round(d*10)/10)}d</span></div><div style="flex:1"><b>${it.e} ${esc(it.n)}</b><div class="sub">${d<0?'Past estimate':d.toFixed(1)+' days left'} · $${it.p.toFixed(2)}${it.warm?' · '+it.warm+' h left out':''}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm" data-ate="${it.id}">Ate it</button><button class="btn sm ghost" data-out="${it.id}">Left out 4h</button><button class="btn sm ghost" data-bin="${it.id}">Binned</button></div></div>`}).join(''):'<p class="note">Fridge empty. Add food below or load the sample.</p>'}</div>
+  <div class="card"><b>Quick add</b><div>${FOODS.map((f,i)=>`<span class="chip" data-q="${i}">${f.e} ${f.n}</span>`).join('')}</div>
+   <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input id="cn" placeholder="Custom food" style="flex:2;min-width:120px"><input id="cd" type="number" min="1" value="5" style="flex:1;min-width:70px" aria-label="Days"><input id="cp" type="number" min="0" step="0.1" value="3" style="flex:1;min-width:70px" aria-label="Price"><button class="btn" id="addc">Add</button></div><div class="err" id="cerr"></div><p class="note">Shelf lives are typical-guidance placeholders, not food-safety guarantees.</p></div>
+  <div class="card"><div class="head" style="margin:0 0 6px"><b>Rescue meals</b><select id="rf"><option value="all">All</option><option value="veg">Vegetarian</option><option value="vegan">Vegan</option></select></div>${rec.length?rec.map(r=>`<div class="item"><div style="flex:1"><b>${esc(r.n)}</b> <span class="sub">${r.t}</span><div class="sub">Uses: ${r.m.join(', ')}${r.miss.length?' · Missing: '+r.miss.join(', '):''}</div></div><button class="btn sm" data-cook="${esc(r.n)}">Cooked it</button></div>`).join(''):'<p class="note">Add food to get rescue meals.</p>'}</div>`;
+}
+function impactView(){
+  const t=frTotals(),c=cur(),retailKg=c.savedKg,retailCh4=retailKg*CH4_G_PER_KG,totKg=t.kg+retailKg,totCh4=t.ch4+retailCh4;
+  const mx=Math.max(1,t.ch4,retailCh4,t.binCh4);
+  return `<h1>Impact</h1><p class="lede">Waste avoided across both sides of ShelfShift: retail actions you applied on the dashboard and household food you ate in time.</p>
+  <div class="kpis"><div class="card kpi"><small>Total food saved</small><b style="color:var(--green)">${totKg.toFixed(1)} kg</b><span>retail + household</span></div>
+  <div class="card kpi"><small>Est. methane avoided</small><b>${(totCh4/1000).toFixed(2)} kg</b><span>≈ ${(totCh4*28/1e6*1000).toFixed(2)} kg CO₂e (100-yr, GWP 28)</span></div>
+  <div class="card kpi"><small>Retail revenue effect</small><b>$${Math.round(c.rev)}</b><span>${c.n} actions applied</span></div>
+  <div class="card kpi"><small>Household money saved</small><b>$${t.money.toFixed(2)}</b><span>${t.n} items eaten in time</span></div></div>
+  <div class="card"><b>Methane avoided by source (g CH₄)</b>
+   <div class="rowkv"><span>Retail actions</span><span class="mono">${Math.round(retailCh4)}</span></div><div class="pbar"><i style="width:${retailCh4/mx*100}%"></i></div>
+   <div class="rowkv"><span>Household eaten in time</span><span class="mono">${Math.round(t.ch4)}</span></div><div class="pbar"><i style="width:${t.ch4/mx*100}%"></i></div>
+   <div class="rowkv"><span>Household binned (released)</span><span class="mono">${Math.round(t.binCh4)}</span></div><div class="pbar"><i style="width:${t.binCh4/mx*100}%;background:var(--red)"></i></div></div>
+  <div class="card" style="margin-top:12px"><b>Assumptions</b><p class="note">${CH4_G_PER_KG} g CH₄ per kg landfilled food = 1000 g × 0.15 × 0.5 × 1.0 × 0.5 × 16/12, with 0% landfill gas capture assumed. Estimates only, to be verified against IPCC 2006 Vol. 5 Ch. 3 and AR5. All batch, temperature, sales and price data are simulated.</p></div>`;
+}
+
 /* ---------- views ---------- */
 function authView(){
   const su=authMode==='signup';
@@ -256,9 +328,9 @@ function modal(){
 }
 function appView(){
   return `<div class="wrap"><div class="top"><div class="logo"><i></i>ShelfShift</div>
-   <div><button class="pill ${tab==='dash'?'on':''}" data-t="dash">Dashboard</button> <button class="pill ${tab==='method'?'on':''}" data-t="method">Method</button></div>
+   <div><button class="pill ${tab==='dash'?'on':''}" data-t="dash">Dashboard</button> <button class="pill ${tab==='fridge'?'on':''}" data-t="fridge">My fridge</button> <button class="pill ${tab==='impact'?'on':''}" data-t="impact">Impact</button> <button class="pill ${tab==='method'?'on':''}" data-t="method">Method</button></div>
    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="badge mono">Hi ${esc(user.name)}</span><span class="badge sim">Simulated data</span><button class="pill" id="out">Log out</button></div></div>
-   ${tab==='dash'?dashView():methodView()}</div>${modal()}`;
+   ${tab==='dash'?dashView():tab==='fridge'?fridgeView():tab==='impact'?impactView():methodView()}</div>${modal()}`;
 }
 
 /* ---------- render ---------- */
@@ -272,7 +344,7 @@ function bindAuth(){
   $('#af').onsubmit=async e=>{
     e.preventDefault();const btn=$('#ab');btn.disabled=true;$('#ae').textContent='';
     try{authMode==='signup'?await signUp($('#nm').value,$('#em').value,$('#pw').value):await logIn($('#em').value,$('#pw').value);
-      user=currentUser();loadState();render()}
+      user=currentUser();loadState();loadFr();render()}
     catch(err){$('#ae').textContent=err.message;btn.disabled=false}
   };
 }
@@ -286,9 +358,22 @@ function bindApp(){
   const rs=$('#reset');if(rs)rs.onclick=()=>{applied={};saveState();render()};
   const cl=$('#close');if(cl)cl.onclick=()=>{openId=null;render()};
   const m=$('#mod');if(m)m.onclick=e=>{if(e.target===m){openId=null;render()}};
+
+  const nd=$('#nextDay');if(nd)nd.onclick=()=>{fr.day++;saveFr();const n=fr.items.filter(i=>left(i)<0).length;if(n)toast(n+' item(s) past estimate');render()};
+  const sf=$('#sampleFr');if(sf)sf.onclick=sampleFr;
+  const ef=$('#emptyFr');if(ef)ef.onclick=()=>{if(confirm('Clear your fridge data?')){fr=blankFr();saveFr();render()}};
+  document.querySelectorAll('[data-ate]').forEach(b=>b.onclick=()=>resolveItem(+b.dataset.ate,true));
+  document.querySelectorAll('[data-bin]').forEach(b=>b.onclick=()=>resolveItem(+b.dataset.bin,false));
+  document.querySelectorAll('[data-out]').forEach(b=>b.onclick=()=>leftOut(+b.dataset.out));
+  document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const f=FOODS[+b.dataset.q];addItem({...f});toast(f.e+' '+f.n+' added. Clock started.');render()});
+  const ac=$('#addc');if(ac)ac.onclick=()=>{const n=$('#cn').value.trim(),d=+$('#cd').value,p=+$('#cp').value;
+    if(!n)return $('#cerr').textContent='Enter a food name.';if(!(d>=1))return $('#cerr').textContent='Days must be 1 or more.';if(!(p>=0))return $('#cerr').textContent='Price cannot be negative.';
+    const k=FOODS.find(f=>f.n.toLowerCase()===n.toLowerCase());addItem({n:k?k.n:n,e:k?k.e:'🍽️',d,kg:k?k.kg:.4},p);render()};
+  const rf=$('#rf');if(rf){rf.value=rfilter;rf.onchange=()=>{rfilter=rf.value;render()}}
+  document.querySelectorAll('[data-cook]').forEach(b=>b.onclick=()=>{const r=RECIPES.find(x=>x.n===b.dataset.cook);fr.items.filter(i=>r.k.includes(i.n.toLowerCase())).forEach(it=>resolveItem(it.id,true))});
   const ao=$('#applyOne');if(ao)ao.onclick=()=>{const id=ao.dataset.id;applied[id]?delete applied[id]:applied[id]=true;saveState();render()};
 }
-user=currentUser();if(user)loadState();render();
+user=currentUser();if(user){loadState();loadFr()}render();
 </script>
 </body>
 </html>
