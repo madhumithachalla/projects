@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShelfShift</title>
+<style>
+:root{--bg:#0b1220;--card:#111a2c;--card2:#0e1626;--line:#1f2b44;--ink:#e8eef9;--mute:#8fa0bd;--teal:#5fd4c0;--red:#f0806e;--amber:#e0b341;--green:#5fcf8a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.4}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:1100px;margin:0 auto;padding:12px 16px 60px}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;padding:8px 0 18px}
+.logo{font-weight:800;font-size:1.3rem;display:flex;gap:8px;align-items:center}
+.logo i{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#5fd4c0,#3a7bd5);display:inline-block}
+.pill{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:6px 14px;cursor:pointer;font-size:.9rem}
+.pill.on{background:#e8eef9;color:#0b1220;font-weight:600}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+.badge{font-size:.72rem;padding:3px 9px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+.badge.sim{color:var(--amber);border-color:#5b4a14;background:#2a2410}
+h1{font-size:clamp(1.5rem,4.5vw,2.2rem);margin:6px 0 8px;line-height:1.15}
+.lede{color:var(--mute);max-width:820px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:18px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.kpi small{display:block;color:var(--mute);letter-spacing:.08em;font-size:.7rem;text-transform:uppercase}
+.kpi b{display:block;font-size:2rem;margin:6px 0 2px}
+.kpi span{color:var(--mute);font-size:.8rem}
+.btn{border:0;border-radius:10px;padding:10px 16px;background:var(--teal);color:#06231d;font-weight:700;cursor:pointer}
+.btn.ghost{background:var(--card);color:var(--mute);border:1px solid var(--line)}
+.btn.sm{padding:8px 12px;font-size:.85rem}
+.note{color:var(--mute);font-size:.8rem;margin:10px 0}
+.demo{margin:18px 0;background:var(--card2)}
+.demo h2{margin:2px 0 4px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
+.eye{font-size:.7rem;letter-spacing:.1em;color:var(--mute);text-transform:uppercase}
+.rowkv{display:flex;justify-content:space-between;font-size:.85rem;padding:3px 0}
+.rowkv span:first-child{color:var(--mute)}
+.risk{font-size:.72rem;padding:3px 9px;border-radius:12px}
+.hi{background:#3a1f1c;color:var(--red)}.md{background:#3a2f10;color:var(--amber)}.lo{background:#12301f;color:var(--green)}
+table{width:100%;border-collapse:collapse}
+th{font-size:.7rem;letter-spacing:.08em;color:var(--mute);text-transform:uppercase;text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}
+td{padding:12px 8px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:.9rem}
+tr.click{cursor:pointer}tr.click:hover{background:#0f1930}
+.bar{height:6px;border-radius:3px;background:#1c2842;margin-top:5px;min-width:90px}
+.bar i{display:block;height:100%;border-radius:3px}
+.sub{color:var(--mute);font-size:.75rem}
+.tbl{overflow-x:auto}
+.head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin:22px 0 10px}
+.grp{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:3px}
+.grp .pill{border:0;background:none}.grp .pill.on{background:#e8eef9;color:#0b1220}
+.modal{position:fixed;inset:0;background:#000a;display:grid;place-items:center;padding:16px;z-index:5}
+.modal .card{max-width:560px;width:100%;max-height:90vh;overflow:auto}
+.auth{max-width:400px;margin:9vh auto 0}
+label{display:block;font-size:.85rem;color:var(--mute);margin:12px 0 4px}
+input{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--card2)}
+.err{color:var(--red);font-size:.9rem;min-height:1.3em;margin-top:8px}
+.tabs2{display:flex;gap:6px;margin:14px 0 4px}.tabs2 button{flex:1}
+.applied{color:var(--green);font-weight:600}
+@media(max-width:640px){td,th{padding:10px 6px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+
+/* ---------- auth: browser-only demo ---------- */
+const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+const rand=n=>{const a=new Uint8Array(n);crypto.getRandomValues(a);return hex(a)};
+async function hashPw(pw,salt){
+  if(window.crypto&&crypto.subtle){
+    const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']);
+    return hex(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt:new TextEncoder().encode(salt),iterations:100000},k,256));
+  }
+  let h=5381;const s=salt+pw;for(let i=0;i<s.length;i++)h=((h<<5)+h)^s.charCodeAt(i);return 'weak'+(h>>>0).toString(16);
+}
+async function signUp(name,email,pw){
+  email=email.trim().toLowerCase();name=name.trim();
+  if(!name)throw new Error('Please enter your name.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Please enter a valid email.');
+  if(pw.length<8)throw new Error('Password must be at least 8 characters.');
+  const u=store.get('ss_users',{});
+  if(u[email])throw new Error('An account with this email already exists. Try logging in.');
+  const salt=rand(16);u[email]={name,salt,hash:await hashPw(pw,salt)};
+  store.set('ss_users',u);store.set('ss_session',{email});
+}
+async function logIn(email,pw){
+  email=email.trim().toLowerCase();const u=store.get('ss_users',{})[email];
+  if(!u||(await hashPw(pw,u.salt))!==u.hash)throw new Error('Incorrect email or password.');
+  store.set('ss_session',{email});
+}
+function currentUser(){const s=store.get('ss_session',null);if(!s)return null;const u=store.get('ss_users',{})[s.email];return u?{email:s.email,name:u.name}:null}
+
+/* ---------- simulated data + model ---------- */
+// Simulated demo data. Shelf-life penalty, limits and rates are illustrative and unvalidated.
+const PRODUCT={T:{name:'Tomatoes',limit:12,kg:.5,price:4.5,dot:'#f0806e'},S:{name:'Strawberries',limit:4,kg:.25,price:5.5,dot:'#e86a9a'},G:{name:'Baby spinach',limit:4,kg:.12,price:3.5,dot:'#5fcf8a'}};
+const STORES=['Central store','North store','West store','East store','Bay store','Harbour store'];
+// id, store, units, printed days, hours above safe limit, sales rate (units/day)
+const RAW=[
+ ['T101','North store',36,2.5,0,14],['T102','Harbour store',60,3.0,4,7],['T103','Central store',44,4.0,1,12],['T104','West store',48,4.0,20,6],
+ ['T105','East store',40,3.5,0,12],['T106','Bay store',24,2.0,6,11],['T107','East store',52,4.0,0,16],['T108','North store',30,3.0,2,11],
+ ['S201','Central store',80,4.2,3,20],['S202','West store',64,3.5,12,6],['S203','North store',70,4.0,0,19],['S204','Bay store',96,4.5,11,6],['S205','East store',60,4.0,1,17],
+ ['G301','Bay store',70,4.3,10,12],['G302','Central store',55,3.8,1,16],['G303','Harbour store',45,3.0,18,10],['G304','North store',50,3.5,0,15],['G305','West store',38,3.8,11,14]
+];
+const PEN=0.065; // days of life lost per hour above the safe limit (illustrative)
+function seeded(i){let s=i*9301+49297;return()=>{s=(s*9301+49297)%233280;return s/233280}}
+function history(b,idx){
+  const r=seeded(idx+3),lim=PRODUCT[b.p].limit,pts=[];
+  const hrs=Math.min(24,Math.round(b.hours)),start=hrs?Math.floor(r()*(24-hrs+1)):0;
+  for(let h=0;h<24;h++){
+    const over=hrs&&h>=start&&h<start+hrs;
+    pts.push(over?lim+1+r()*(lim*.35)+(h%3):lim-2.5-r()*2.5);
+  }
+  return pts;
+}
+const sig=x=>1/(1+Math.exp(-x));
+function build(){
+  const list=RAW.map((x,i)=>{
+    const b={id:x[0],p:x[0][0],store:x[1],units:x[2],printed:x[3],hours:x[4],rate:x[5]};
+    b.dyn=Math.max(.3,b.printed-PEN*b.hours+(b.hours===0?.1:0));
+    b.sellDays=b.units/b.rate;
+    b.sold=Math.min(b.units,b.rate*b.dyn);
+    b.wasteUnits=b.units-b.sold;
+    const f=b.wasteUnits/b.units,slack=(b.dyn-b.sellDays)/b.dyn;
+    b.prob=Math.min(.98,sig(9*f-2.4-3*slack));
+    b.wasteKg=b.wasteUnits*PRODUCT[b.p].kg;
+    b.temps=history(b,i);
+    return b;
+  });
+  // FEFO rank within product
+  ['T','S','G'].forEach(p=>{const g=list.filter(b=>b.p===p).sort((a,b)=>a.dyn-b.dyn);g.forEach((b,i)=>{b.fefo=i+1;b.fefoOf=g.length})});
+  // recommended action: least aggressive that prevents waste
+  list.forEach(b=>{
+    b.action={type:'none',label:'No action needed',recovered:0,rev:0};
+    if(b.prob>=.4){
+      const pr=PRODUCT[b.p].price;
+      const dest=STORES.map(s=>({s,load:list.filter(o=>o.store===s&&o.p===b.p).reduce((a,o)=>a+o.wasteUnits,0)})).filter(d=>d.s!==b.store).sort((a,c)=>a.load-c.load)[0];
+      if(b.prob>=.75||b.wasteUnits>=10&&b.prob<.95&&b.hours<12&&false){
+        const n=Math.max(4,Math.min(b.units,Math.round(b.wasteUnits*.65)));
+        b.action={type:'transfer',label:`Transfer ${n} units to ${dest.s.replace(' store','')} store`,recovered:n*.75*PRODUCT[b.p].kg*0+Math.min(b.wasteUnits,n*.8)*PRODUCT[b.p].kg,rev:Math.min(b.wasteUnits,n*.8)*pr-n*.12,units:n};
+      }else if(b.hours>=10){
+        b.action={type:'markdown',label:'15% markdown at 2 PM',recovered:b.wasteUnits*.45*PRODUCT[b.p].kg,rev:b.wasteUnits*.45*pr*.85,units:0};
+      }else{
+        const n=Math.max(4,Math.round(b.wasteUnits*.6));
+        b.action={type:'transfer',label:`Transfer ${n} units to ${dest.s.replace(' store','')} store`,recovered:Math.min(b.wasteUnits,n*.8)*PRODUCT[b.p].kg,rev:Math.min(b.wasteUnits,n*.8)*pr-n*.12,units:n};
+      }
+    }
+  });
+  return list;
+}
+const BATCHES=build();
+const CH4_G_PER_KG=50;
+
+/* ---------- state ---------- */
+let user=null,tab='dash',filter='All',sortBy='risk',authMode='login',applied={},openId=null;
+const loadState=()=>{applied=store.get('ss_applied_'+user.email,{})};
+const saveState=()=>store.set('ss_applied_'+user.email,applied);
+const riskCls=p=>p>=.6?'hi':p>=.3?'md':'lo';
+const riskLbl=p=>p>=.6?'High':p>=.3?'Medium':'Low';
+const riskCol=p=>p>=.6?'var(--red)':p>=.3?'var(--amber)':'var(--green)';
+const pct=p=>Math.round(p*100);
+
+function totals(){
+  const hi=BATCHES.filter(b=>b.prob>=.6);
+  const pw=BATCHES.reduce((s,b)=>s+b.wasteKg,0),pu=BATCHES.reduce((s,b)=>s+b.wasteUnits,0);
+  const withKg=BATCHES.reduce((s,b)=>s+(b.action.type!=='none'?Math.max(0,b.wasteKg-b.action.recovered):b.wasteKg),0);
+  const rev=BATCHES.filter(b=>b.action.type!=='none').reduce((s,b)=>s+b.action.rev,0);
+  return {hi:hi.length,pw,pu,withKg,saved:pw-withKg,rev};
+}
+function cur(){ // current (applied-aware) view
+  const t=totals();const apc=BATCHES.filter(b=>applied[b.id]);
+  const savedKg=apc.reduce((s,b)=>s+b.action.recovered,0),rev=apc.reduce((s,b)=>s+b.action.rev,0);
+  return {savedKg,rev,n:apc.length,...t};
+}
+
+/* ---------- views ---------- */
+function authView(){
+  const su=authMode==='signup';
+  return `<div class="wrap"><div class="card auth"><div class="logo"><i></i>ShelfShift</div><p class="lede">Which batches will become waste before they sell?</p>
+  <div class="tabs2"><button class="pill grow ${su?'':'on'}" style="flex:1" data-am="login">Log in</button><button class="pill ${su?'on':''}" style="flex:1" data-am="signup">Sign up</button></div>
+  <form id="af" novalidate>${su?'<label for="nm">Name</label><input id="nm" autocomplete="name">':''}
+  <label for="em">Email</label><input id="em" type="email" autocomplete="email">
+  <label for="pw">Password ${su?'(8+ characters)':''}</label><input id="pw" type="password" autocomplete="${su?'new-password':'current-password'}">
+  <div class="err" id="ae" role="alert"></div><button class="btn" id="ab" style="width:100%;margin-top:6px">${su?'Create account':'Log in'}</button></form>
+  <p class="note">Demo login. Accounts stay in this browser only; do not reuse an important password.</p></div></div>`;
+}
+function spark(b,w=380,h=110){
+  const lim=PRODUCT[b.p].limit,all=[...b.temps,lim],mn=Math.min(...all)-1,mx=Math.max(...all)+1;
+  const X=i=>6+i*(w-12)/(b.temps.length-1),Y=v=>h-6-(v-mn)/(mx-mn)*(h-12);
+  const d=b.temps.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Temperature history, 24 hours, safe limit ${lim} degrees"><line x1="6" x2="${w-6}" y1="${Y(lim)}" y2="${Y(lim)}" stroke="#f0806e" stroke-dasharray="4 4"/><path d="${d}" fill="none" stroke="#6aa8ff" stroke-width="2"/></svg>`;
+}
+function demoCard(b){
+  const r=riskCls(b.prob);
+  return `<div class="card"><div class="rowkv" style="align-items:center"><b>${b.id} ${PRODUCT[b.p].name} <span class="sub">· ${b.store}</span></b><span class="risk ${r}">${riskLbl(b.prob)} risk</span></div>
+  ${spark(b)}
+  <div class="rowkv"><span>Printed expiry left</span><span class="mono">${b.printed.toFixed(1)} d</span></div>
+  <div class="rowkv"><span>Hours above safe limit</span><span class="mono">${b.hours} h</span></div>
+  <div class="rowkv"><span>Model: life left</span><b class="mono">${b.dyn.toFixed(1)} d</b></div>
+  <div class="rowkv"><span>Waste probability</span><b class="mono">${pct(b.prob)}%</b></div>
+  <div class="rowkv"><span>Next step</span><b>${esc(b.action.label)}</b></div>
+  <button class="btn ghost" style="width:100%;margin-top:8px" data-open="${b.id}">Open batch</button></div>`;
+}
+function dashView(){
+  const t=cur();
+  const rows=[...BATCHES].filter(b=>filter==='All'||PRODUCT[b.p].name===filter).sort((a,b)=>sortBy==='risk'?b.prob-a.prob:a.dyn-b.dyn);
+  const a=BATCHES.find(b=>b.id==='T104'),c=BATCHES.find(b=>b.id==='T107');
+  const ch4=t.savedKg*CH4_G_PER_KG/1000,ch4All=t.saved*CH4_G_PER_KG/1000;
+  return `<h1>Which batches will become waste before they sell?</h1>
+  <p class="lede">${t.hi} of ${BATCHES.length} fresh-produce batches are at high waste risk. A model estimates each batch's remaining life from its storage temperature history, sales rates are compared with that life, and ShelfShift recommends the least aggressive action that prevents the waste.</p>
+  <div class="kpis">
+   <div class="card kpi"><small>High-risk batches</small><b style="color:var(--red)">${t.hi} <span style="font-size:1rem;color:var(--mute)">/ ${BATCHES.length}</span></b><span>waste probability 60% or more</span></div>
+   <div class="card kpi"><small>Predicted waste</small><b>${t.pw.toFixed(1)} kg</b><span>${Math.round(t.pu)} units before spoilage</span></div>
+   <div class="card kpi"><small>With recommended actions</small><b style="color:var(--green)">${t.withKg.toFixed(1)} kg</b><span>${t.saved.toFixed(1)} kg less waste (${Math.round(t.saved/t.pw*100)}%)</span></div>
+   <div class="card kpi"><small>Revenue effect</small><b style="color:var(--green)">${t.rev>=0?'+':'-'}$${Math.abs(Math.round(t.rev))}</b><span>expected revenue, recommended vs current plan</span></div>
+  </div>
+  <div class="head" style="margin-top:0"><div><button class="btn" id="applyAll">Apply all recommendations</button> <button class="btn ghost" id="reset">Reset</button> ${t.n?`<span class="applied">&nbsp;${t.n} applied · ${t.savedKg.toFixed(1)} kg saved · $${Math.round(t.rev)}</span>`:''}</div></div>
+  <p class="note">Indicative: ${t.saved.toFixed(1)} kg less food waste is about ${ch4All.toFixed(2)} kg of methane avoided if that food would have gone to landfill (${CH4_G_PER_KG} g CH₄ per kg, before landfill gas capture; to be verified).${t.n?` Applied so far: ${ch4.toFixed(2)} kg.`:''}</p>
+  <div class="card demo"><div class="eye">Demo moment</div><h2>Same printed expiry, different priority</h2><p class="lede">Both tomato batches say 4 days left on the label. Their temperature histories tell a different story.</p><div class="two">${demoCard(a)}${demoCard(c)}</div></div>
+  <div class="head"><h2 style="margin:0">All batches</h2><div class="row" style="display:flex;gap:10px;flex-wrap:wrap">
+   <div class="grp">${['All','Tomatoes','Strawberries','Baby spinach'].map(f=>`<button class="pill ${filter===f?'on':''}" data-f="${f}">${f}</button>`).join('')}</div>
+   <div class="grp"><button class="pill ${sortBy==='risk'?'on':''}" data-s="risk">By waste risk</button><button class="pill ${sortBy==='fefo'?'on':''}" data-s="fefo">By remaining life (FEFO)</button></div></div></div>
+  <div class="card tbl" style="padding:0"><table><thead><tr><th>Batch</th><th>Printed → dynamic</th><th>Waste probability</th><th>Expected waste</th><th>Next step</th></tr></thead><tbody>
+  ${rows.map(b=>`<tr class="click" data-open="${b.id}"><td><b>${b.id}</b> <span style="color:${PRODUCT[b.p].dot}">●</span> ${PRODUCT[b.p].name}<div class="sub">${b.store} · ${b.units} units · FEFO ${b.fefo} of ${b.fefoOf}</div></td>
+   <td class="mono">${b.printed.toFixed(1)} d → <b>${b.dyn.toFixed(1)}</b><div class="sub">${(b.dyn-b.printed>=0?'+':'')+(b.dyn-b.printed).toFixed(1)} d vs printed</div></td>
+   <td><span class="risk ${riskCls(b.prob)}">${riskLbl(b.prob)}</span> <b>${pct(b.prob)}%</b><div class="bar"><i style="width:${pct(b.prob)}%;background:${riskCol(b.prob)}"></i></div></td>
+   <td class="mono">${b.wasteUnits.toFixed(1)} units<div class="sub">${b.wasteKg.toFixed(1)} kg</div></td>
+   <td>${applied[b.id]?'<span class="applied">✓ Applied: </span>':''}<b style="${b.action.type==='none'?'color:var(--mute);font-weight:400':''}">${esc(b.action.label)}</b></td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+function methodView(){
+  return `<h1>Method</h1><div class="card"><p class="lede">Printed expiry assumes ideal storage. ShelfShift adjusts it using the batch's temperature history, then compares remaining life with how fast the batch is selling.</p>
+  <ol class="lede"><li><b>Dynamic life</b> = printed days left minus ${PEN} days for every hour above the product's safe temperature limit.</li>
+  <li><b>Waste probability</b> compares the days needed to sell the batch at its current rate with its dynamic life.</li>
+  <li><b>Expected waste</b> = units that will not sell before the batch spoils.</li>
+  <li><b>Action</b>: for risk of 40% or more, pick the least aggressive step: transfer units to a store with spare demand, or a 15% markdown.</li>
+  <li><b>Methane</b>: avoided food waste × ${CH4_G_PER_KG} g CH₄ per kg (1000 g × 0.15 × 0.5 × 1.0 × 0.5 × 16/12), before landfill gas capture.</li></ol></div>
+  <div class="card" style="margin-top:12px"><b>Limits</b><p class="lede">All batches, temperatures and sales rates are simulated. The life penalty, safe limits, recovery rates and methane factors are illustrative and not validated. Not a food-safety tool. Production use needs real sensor and POS data, calibration per product and expert review.</p></div>`;
+}
+function modal(){
+  const b=BATCHES.find(x=>x.id===openId);if(!b)return '';
+  return `<div class="modal" id="mod"><div class="card"><div class="rowkv" style="align-items:center"><b style="font-size:1.1rem">${b.id} ${PRODUCT[b.p].name}</b><button class="btn ghost sm" id="close">Close</button></div>
+  <div class="sub">${b.store} · ${b.units} units · FEFO ${b.fefo} of ${b.fefoOf}</div>${spark(b,480,130)}<div class="sub">Last 24 hours. Dashed line is the safe limit (${PRODUCT[b.p].limit}°C).</div>
+  <div class="rowkv"><span>Printed expiry left</span><span class="mono">${b.printed.toFixed(1)} d</span></div>
+  <div class="rowkv"><span>Hours above safe limit</span><span class="mono">${b.hours} h</span></div>
+  <div class="rowkv"><span>Dynamic life</span><b class="mono">${b.dyn.toFixed(1)} d</b></div>
+  <div class="rowkv"><span>Sales rate</span><span class="mono">${b.rate} units/day</span></div>
+  <div class="rowkv"><span>Days to sell all units</span><span class="mono">${b.sellDays.toFixed(1)} d</span></div>
+  <div class="rowkv"><span>Waste probability</span><b class="mono">${pct(b.prob)}%</b></div>
+  <div class="rowkv"><span>Expected waste</span><span class="mono">${b.wasteUnits.toFixed(1)} units (${b.wasteKg.toFixed(1)} kg)</span></div>
+  <div class="rowkv"><span>Recommended</span><b>${esc(b.action.label)}</b></div>
+  ${b.action.type!=='none'?`<button class="btn" style="width:100%;margin-top:10px" id="applyOne" data-id="${b.id}">${applied[b.id]?'Undo this action':'Apply recommendation'}</button>`:''}</div></div>`;
+}
+function appView(){
+  return `<div class="wrap"><div class="top"><div class="logo"><i></i>ShelfShift</div>
+   <div><button class="pill ${tab==='dash'?'on':''}" data-t="dash">Dashboard</button> <button class="pill ${tab==='method'?'on':''}" data-t="method">Method</button></div>
+   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="badge mono">Hi ${esc(user.name)}</span><span class="badge sim">Simulated data</span><button class="pill" id="out">Log out</button></div></div>
+   ${tab==='dash'?dashView():methodView()}</div>${modal()}`;
+}
+
+/* ---------- render ---------- */
+function render(){
+  const app=$('#app');
+  if(!user){app.innerHTML=authView();bindAuth();return}
+  app.innerHTML=appView();bindApp();
+}
+function bindAuth(){
+  document.querySelectorAll('[data-am]').forEach(b=>b.onclick=()=>{authMode=b.dataset.am;render()});
+  $('#af').onsubmit=async e=>{
+    e.preventDefault();const btn=$('#ab');btn.disabled=true;$('#ae').textContent='';
+    try{authMode==='signup'?await signUp($('#nm').value,$('#em').value,$('#pw').value):await logIn($('#em').value,$('#pw').value);
+      user=currentUser();loadState();render()}
+    catch(err){$('#ae').textContent=err.message;btn.disabled=false}
+  };
+}
+function bindApp(){
+  $('#out').onclick=()=>{store.del('ss_session');user=null;render()};
+  document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()});
+  document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{filter=b.dataset.f;render()});
+  document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{sortBy=b.dataset.s;render()});
+  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{openId=b.dataset.open;render()});
+  const aa=$('#applyAll');if(aa)aa.onclick=()=>{BATCHES.forEach(b=>{if(b.action.type!=='none')applied[b.id]=true});saveState();render()};
+  const rs=$('#reset');if(rs)rs.onclick=()=>{applied={};saveState();render()};
+  const cl=$('#close');if(cl)cl.onclick=()=>{openId=null;render()};
+  const m=$('#mod');if(m)m.onclick=e=>{if(e.target===m){openId=null;render()}};
+  const ao=$('#applyOne');if(ao)ao.onclick=()=>{const id=ao.dataset.id;applied[id]?delete applied[id]:applied[id]=true;saveState();render()};
+}
+user=currentUser();if(user)loadState();render();
+</script>
+</body>
+</html>
