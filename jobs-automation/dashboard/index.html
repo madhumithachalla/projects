@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JOBS Tracker</title>
+<style>
+:root{--bg:#f5f6f8;--surface:#fff;--ink:#1b2333;--muted:#5b6578;--line:#dde2ea;--accent:#2b4a8b;--accent-ink:#fff;--accent-soft:#e8eefb;--crit:#b3261e;--crit-soft:#fdeceb;--urg:#b45309;--warn-soft:#fff4e5;--ok:#2e7d4f;--ok-soft:#e3f4ea;--bar:#2b4a8b}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#11151e;--surface:#1a202c;--ink:#e8ecf4;--muted:#9aa5b8;--line:#2b3446;--accent:#8fb0ff;--accent-ink:#0e1424;--accent-soft:#222c44;--crit:#ff8a80;--crit-soft:#33201f;--urg:#ffb454;--warn-soft:#2e2517;--ok:#6fcf97;--ok-soft:#1d2e25;--bar:#8fb0ff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px 16px 56px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-size:21px;margin:0}h2{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.sub{color:var(--muted);font-size:13px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.card{appearance:none;text-align:left;font:inherit;color:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card:hover,.card:focus-visible{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px var(--accent-soft)}
+.card b{display:block;font:600 28px/1.1 ui-monospace,Menlo,monospace}.card span{font-size:12px;color:var(--muted)}
+.card.hot{background:var(--warn-soft);border-color:var(--urg)}.card.crit{background:var(--crit-soft);border-color:var(--crit)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.bar{appearance:none;font:inherit;color:inherit;cursor:pointer;background:none;border:0;display:grid;grid-template-columns:minmax(110px,170px) 1fr 28px;gap:8px;align-items:center;width:100%;padding:3px 4px;border-radius:6px;text-align:left}
+.bar:hover{background:var(--accent-soft)}.bar i{display:block;height:10px;border-radius:3px;background:var(--bar)}.bar em{font-style:normal;text-align:right}
+.bar span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.tab{appearance:none;font:inherit;color:inherit;border:1px solid var(--line);background:none;border-radius:99px;padding:5px 12px;cursor:pointer}
+.tab[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.filters input,.filters select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 9px;min-width:0}.filters input{flex:1 1 200px}
+.role{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden;background:var(--surface)}
+.rhead{appearance:none;font:inherit;color:inherit;background:none;border:0;width:100%;text-align:left;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:12px;padding:10px 12px;align-items:center}
+.rhead:hover{background:var(--accent-soft)}.rmain b{display:block}.rmain small{color:var(--muted)}
+.rside{text-align:right;font-size:12px;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+.pill{display:inline-block;padding:1px 9px;border-radius:99px;background:var(--accent-soft);font-size:12px}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.warn{background:var(--warn-soft);color:var(--urg)}.pill.bad{background:var(--crit-soft);color:var(--crit)}
+.pr-CRITICAL{color:var(--crit);font-weight:600}.pr-URGENT{color:var(--urg);font-weight:600}.nodate{color:var(--urg)}
+.rbody{border-top:1px solid var(--line);padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:720px){.rbody{grid-template-columns:1fr}}
+dl{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;margin:0}dt{color:var(--muted);font-size:12px}dd{margin:0;overflow-wrap:anywhere}
+ul.flags{margin:0;padding-left:18px}ul.flags li{margin-bottom:4px}
+.btn{font:inherit;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:6px 12px;cursor:pointer;text-decoration:none;display:inline-block}.btn.ghost{background:none;color:var(--ink);border-color:var(--line)}
+.empty{text-align:center;padding:24px;color:var(--muted)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div><h1 id="title">JOBS Tracker</h1>
+  <div class="sub" id="asof"></div>
+  <div class="sub">Read-only view. Nothing is submitted without approval (reply APPROVE, SKIP or changes to the preview email, or tell Claude in chat), except the closing-soon lane. Use "Copy reply" to paste an approval.</div></div>
+  <div class="cards" id="cards"></div>
+  <div class="grid2"><div class="panel"><h2>By portal</h2><div id="byPortal"></div></div><div class="panel"><h2>By employer type</h2><div id="byEmp"></div></div></div>
+  <div class="panel"><h2>Roles</h2><div class="tabs" id="tabs"></div>
+    <div class="filters"><input id="q" type="search" placeholder="Search company, role, ID" aria-label="Search"><select id="fcat" aria-label="Portal category"></select><select id="fprio" aria-label="Priority"></select></div>
+    <div id="list"></div></div>
+</div>
+<div id="toast" hidden></div>
+<script src="data.js"></script>
+<script>
+(function(){
+var D = window.JOBS_DATA || {roles:[],events:[],profile:{}};
+var roles = D.roles || [];
+var S = {tab:'attention', q:'', cat:'all', prio:'all', open:{}};
+var PRIO_ORDER = {CRITICAL:0, URGENT:1, NORMAL:2, FUTURE:3, CLOSED:4, '':5};
+var APPLIED = ['Applied','Interview','Offer','Rejected'];
+var TABS = [
+ ['attention','Needs attention', function(r){return r.status==='Manual Needed' || r.priority==='CRITICAL' || r.priority==='URGENT' && ['Preview Sent','Approved','Materials Ready'].indexOf(r.status)>=0;}],
+ ['await','Awaiting approval', function(r){return r.status==='Preview Sent'||r.status==='Materials Ready';}],
+ ['approved','Approved', function(r){return r.status==='Approved';}],
+ ['applied','Applied', function(r){return APPLIED.indexOf(r.status)>=0;}],
+ ['manual','Manual needed', function(r){return r.status==='Manual Needed';}],
+ ['nodate','No closing date', function(r){return !r.closingKnown && ['Skipped','Closed'].indexOf(r.status)<0 && APPLIED.indexOf(r.status)<0;}],
+ ['closed','Skipped / closed', function(r){return r.status==='Skipped'||r.status==='Closed';}],
+ ['all','All', function(){return true;}]
+];
+function el(tag, attrs, kids){
+  var e = document.createElement(tag);
+  Object.keys(attrs||{}).forEach(function(k){
+    if(k==='class') e.className = attrs[k];
+    else if(k==='text') e.textContent = attrs[k];
+    else if(k.slice(0,2)==='on') e.addEventListener(k.slice(2), attrs[k]);
+    else e.setAttribute(k, attrs[k]);
+  });
+  (kids||[]).forEach(function(c){ if(c!=null) e.appendChild(typeof c==='string'?document.createTextNode(c):c); });
+  return e;
+}
+function dmy(iso){ if(!iso) return 'not listed'; var p=iso.slice(0,10).split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function stamp(iso){ if(!iso) return ''; var d=new Date(iso); return isNaN(d)?iso:d.toLocaleString('en-AU',{timeZone:'Australia/Melbourne',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}); }
+function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(function(){t.hidden=true},2600); }
+function count(fn){ var m={}; roles.forEach(function(r){ var k=fn(r); if(k) m[k]=(m[k]||0)+1; }); return m; }
+function tabFn(k){ return TABS.filter(function(t){return t[0]===k;})[0][2]; }
+function pillClass(s){ return APPLIED.indexOf(s)>=0?'ok':(s==='Manual Needed'||s==='Rejected')?'bad':(s==='Preview Sent'||s==='Materials Ready')?'warn':''; }
+
+function bars(map, kind){
+  var box = el('div'); var ks = Object.keys(map).sort(function(a,b){return map[b]-map[a];});
+  if(!ks.length) return el('div',{class:'sub',text:'Nothing yet.'});
+  var mx = map[ks[0]];
+  ks.forEach(function(k){
+    box.appendChild(el('button',{class:'bar',type:'button',onclick:function(){ if(kind==='cat'){S.cat=k;S.tab='all';} else {S.q=k;S.tab='all';} render(); }},[
+      el('span',{text:k,title:k}), el('span',{},[el('i',{style:'width:'+Math.max(3,100*map[k]/mx)+'%'})]), el('em',{text:String(map[k])})]));
+  });
+  return box;
+}
+function visible(){
+  var q=S.q.toLowerCase(), fn=tabFn(S.tab);
+  return roles.filter(function(r){
+    if(!fn(r)) return false;
+    if(S.cat!=='all' && r.portalCategory!==S.cat) return false;
+    if(S.prio!=='all' && r.priority!==S.prio) return false;
+    if(q && (r.company+' '+r.title+' '+r.location+' '+r.roleId+' '+(r.employerType||'')).toLowerCase().indexOf(q)<0) return false;
+    return true;
+  }).sort(function(a,b){ return (PRIO_ORDER[a.priority]-PRIO_ORDER[b.priority]) || (a.closing||'9999').localeCompare(b.closing||'9999') || a.roleId.localeCompare(b.roleId); });
+}
+function card(label, n, tab, cls){
+  return el('button',{class:'card '+(n&&cls?cls:''),type:'button',onclick:function(){S.tab=tab;S.q='';S.cat='all';S.prio='all';render();document.getElementById('list').scrollIntoView({behavior:'smooth'});}},[el('b',{text:String(n)}),el('span',{text:label})]);
+}
+function roleEl(r){
+  var open = !!S.open[r.roleId];
+  var closes = r.closingKnown ? 'Closes '+dmy(r.closing) : 'Closing date not listed';
+  var head = el('button',{class:'rhead',type:'button','aria-expanded':String(open),onclick:function(){S.open[r.roleId]=!S.open[r.roleId];render();}},[
+    el('span',{class:'rmain'},[el('b',{text:r.company}), el('small',{text:r.title+(r.location?' · '+r.location:'')})]),
+    el('span',{class:'rside'},[el('span',{class:'pill '+pillClass(r.status),text:r.status}), el('span',{class:r.closingKnown?'':'nodate',text:closes}), r.priority?el('span',{class:'pr-'+r.priority,text:r.priority}):null])]);
+  var box = el('div',{class:'role'},[head]);
+  if(open){
+    var dl = el('dl'); [['Role ID',r.roleId],['Portal',(r.portalName||'?')+' ('+(r.portalCategory||'?')+')'],['Employer type',r.employerType||'?'],['Tier',r.tier||''],['Salary',r.salary||'not listed'],['Found',dmy(r.foundDate)+' on '+(r.foundOn||'?')],['Preview',r.previewAt?stamp(r.previewAt)+' ('+(r.previewType||'')+')':'not sent'],['Approved',r.approvedAt?stamp(r.approvedAt):''],['Applied',r.appliedAt?stamp(r.appliedAt):'']].forEach(function(p){ if(p[1]!==''){ dl.appendChild(el('dt',{text:p[0]})); dl.appendChild(el('dd',{text:p[1]})); }});
+    if(r.portalNote){ dl.appendChild(el('dt',{text:'Portal note'})); dl.appendChild(el('dd',{text:r.portalNote})); }
+    var right = el('div',{},[el('h2',{text:'Needs your decision'})]);
+    if((r.flags||[]).length){ var ul=el('ul',{class:'flags'}); r.flags.forEach(function(f){ul.appendChild(el('li',{text:f}));}); right.appendChild(ul); } else right.appendChild(el('div',{class:'sub',text:'Nothing flagged.'}));
+    if(r.notes) right.appendChild(el('p',{class:'sub',text:'Notes: '+r.notes}));
+    var actions = el('div',{style:'grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap'},[]);
+    if(r.status==='Preview Sent'){
+      ['APPROVE','SKIP'].forEach(function(w){ actions.appendChild(el('button',{class:w==='APPROVE'?'btn':'btn ghost',type:'button',onclick:function(){ var t=w+' '+r.roleId; if(navigator.clipboard) navigator.clipboard.writeText(t).then(function(){toast('Copied "'+t+'". Paste it as your reply or tell Claude.');},function(){toast(t);}); else toast(t); }},[ 'Copy reply: '+w+' '+r.roleId ])); });
+    }
+    if(r.applyUrl && /^https?:/.test(r.applyUrl)) actions.appendChild(el('a',{class:'btn ghost',href:r.applyUrl,target:'_blank',rel:'noopener noreferrer',text:'Open posting'}));
+    box.appendChild(el('div',{class:'rbody'},[dl,right,actions]));
+  }
+  return box;
+}
+function render(){
+  document.getElementById('title').textContent = (D.profile&&D.profile.name?D.profile.name+': ':'')+'Job Applications';
+  document.getElementById('asof').textContent = roles.length+' roles tracked. Times in Melbourne.';
+  var n=function(f){return roles.filter(f).length;};
+  var cards=document.getElementById('cards'); cards.textContent='';
+  cards.appendChild(card('Awaiting your approval', n(tabFn('await')), 'await', 'hot'));
+  cards.appendChild(card('Needs attention', n(tabFn('attention')), 'attention', 'crit'));
+  cards.appendChild(card('Closing within 5 days', n(function(r){return r.priority==='CRITICAL'||r.priority==='URGENT';}), 'attention', 'crit'));
+  cards.appendChild(card('No closing date', n(tabFn('nodate')), 'nodate', 'hot'));
+  cards.appendChild(card('Approved, not applied', n(tabFn('approved')), 'approved'));
+  cards.appendChild(card('Applied', n(tabFn('applied')), 'applied'));
+  var bp=document.getElementById('byPortal'); bp.textContent=''; bp.appendChild(bars(count(function(r){return r.portalCategory;}),'cat'));
+  var be=document.getElementById('byEmp'); be.textContent=''; be.appendChild(bars(count(function(r){return r.employerType;}),'emp'));
+  var tabs=document.getElementById('tabs'); tabs.textContent='';
+  TABS.forEach(function(t){ tabs.appendChild(el('button',{class:'tab',type:'button','aria-pressed':String(S.tab===t[0]),onclick:function(){S.tab=t[0];render();}},[t[1]+' '+roles.filter(t[2]).length])); });
+  var fc=document.getElementById('fcat'); var cats=Object.keys(count(function(r){return r.portalCategory;})).sort();
+  fc.textContent=''; fc.appendChild(el('option',{value:'all',text:'All portal categories'})); cats.forEach(function(c){ var o=el('option',{value:c,text:c}); if(c===S.cat)o.selected=true; fc.appendChild(o); });
+  var fp=document.getElementById('fprio'); fp.textContent=''; [['all','All priorities'],['CRITICAL','CRITICAL'],['URGENT','URGENT'],['NORMAL','NORMAL'],['FUTURE','FUTURE'],['CLOSED','CLOSED']].forEach(function(p){ var o=el('option',{value:p[0],text:p[1]}); if(p[0]===S.prio)o.selected=true; fp.appendChild(o); });
+  var q=document.getElementById('q'); if(q.value!==S.q) q.value=S.q;
+  var list=document.getElementById('list'); list.textContent=''; var v=visible();
+  if(!v.length) list.appendChild(el('div',{class:'empty',text:'Nothing here.'})); else v.forEach(function(r){list.appendChild(roleEl(r));});
+}
+document.getElementById('q').addEventListener('input',function(e){S.q=e.target.value;render();document.getElementById('q').focus();});
+document.getElementById('fcat').addEventListener('change',function(e){S.cat=e.target.value;render();});
+document.getElementById('fprio').addEventListener('change',function(e){S.prio=e.target.value;render();});
+render();
+})();
+</script>
+</body>
+</html>
