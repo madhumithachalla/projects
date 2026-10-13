@@ -37,42 +37,56 @@ concurrent load instead of serialising requests behind the GIL.
   requests at the deployed service to check it holds up under parallel load rather than
   just working for one request at a time.
 
-## Why this folder doesn't contain the real submission
+## Why this isn't the literal assignment submission
 
-This was built to a university-provided specification that other students in the same
-unit also work from. Even though it's solo (not team) work, publishing the actual
-implementation publicly risks it being found and copied by someone currently doing the
-same assignment — Monash's academic integrity policy is exactly as strict about that as
-it is about team coursework. So, same rule I apply to BirdTag: what's here is a **fresh
-reconstruction** of the pattern I actually used — written from scratch for this repo,
-never copied from the real submission — plus an honest description of the architecture
-above. The real server code, the real OCI tenancy and the real cluster no longer exist in
-a form anyone could reuse anyway (OCI free-tier instances get recycled).
+This started life as a university-provided specification (Monash FIT5225, Assignment 1)
+that other students in the same unit also work from — so a line-for-line copy of what I
+submitted isn't something to publish publicly, for the same academic-integrity reason I
+apply to BirdTag. Instead of a vague "reconstruction," though, the service in
+[`service/`](./service) is my own original submission's approach **substantially rewritten
+and extended** with real engineering the assignment didn't ask for or grade:
+
+| Original assignment service | This repo's version |
+|---|---|
+| Reloaded the TFLite model on every single request | Model loaded once at startup (FastAPI lifespan), reused across requests behind a thread lock |
+| Drew every keypoint regardless of confidence, even near-zero ones | Confidence-threshold filtering before drawing or reporting a keypoint |
+| Two near-duplicate routes (`/pose-estimation`, `/pose-estimation/image`) for keypoints vs. annotated image | One endpoint with a `response_format` field (`keypoints` / `image` / `both`) |
+| No way to process more than one image per request | New `/pose-estimation/batch` endpoint, up to 32 images processed concurrently with `asyncio.gather` |
+| No health/readiness signal, bare `except Exception: print()` | `/healthz` endpoint, structured logging, correct HTTP status codes (503 while the model's still loading, 400 on a bad request) |
+
+This is different work, not the same code relabelled — different file structure, different
+endpoint design, new features, real bugs fixed. The TFLite MoveNet model file itself isn't
+bundled here (it's a large binary asset, not something to park in a git repo); point
+`POSE_MODEL_PATH` at a MoveNet `.tflite` export (e.g. from TensorFlow Hub) to run it.
+
+The real OCI tenancy and the three-VM cluster described above no longer exist (OCI
+free-tier instances get recycled), so this service isn't deployed anywhere right now —
+it's here to run locally or against your own cluster.
 
 ## Files here
 
-- **`loadtest_client.py`** — a standalone reconstruction of the concurrent load-test
-  client: it walks a folder of images, base64-encodes each one, and fires them at a pose-
-  detection endpoint in parallel via a thread pool, timing total and average response
-  time. This is the same *approach* the real client used (and the same approach Locust
-  automates at larger scale), rewritten fresh rather than copied from the real submission.
+- **`service/`** — the enhanced FastAPI pose-estimation service described above
+  (`main.py`, `pose_model.py`, `codec.py`, `requirements.txt`).
+- **`loadtest_client.py`** — a concurrent load-test client: it walks a folder of images,
+  base64-encodes each one, and fires them at the service in parallel via a thread pool,
+  timing total and average response time. The same *approach* Locust automates at larger
+  scale, written fresh for this repo.
 - **`live-demo.html`** — a live, fully in-browser pose-estimation demo. It runs a real
-  pose-detection model (TensorFlow.js MoveNet) client-side against your webcam or an
-  uploaded photo — not a mock-up — plus a clearly-labelled simulated panel visualising
-  what concurrent load-testing against the deployed service looks like. No server code,
-  no real OCI infrastructure, and no assignment code is exposed by this page; it
-  demonstrates the same skill set (pose estimation, concurrency, load-test interpretation)
-  through a working demo instead of describing one. It's also mirrored at
+  pose-detection model (TensorFlow.js MoveNet — the same model family as `service/`, run
+  through a different, in-browser runtime) against your webcam or an uploaded photo. The
+  OCI/Kubernetes architecture section describes the real, now-decommissioned
+  infrastructure; the load-test panel generates illustrative numbers since the original
+  Locust report isn't available. It's also mirrored at
   [`madhumithachalla.github.io/projects/demos/cloudpose-demo.html`](https://madhumithachalla.github.io/projects/demos/cloudpose-demo.html)
   so it's reachable straight from the portfolio site.
 
-## Running the reconstruction
+## Running it
 
 ```bash
-python loadtest_client.py <input_folder> <pose-detection-endpoint-url> <num_workers>
+pip install -r service/requirements.txt
+POSE_MODEL_PATH=./models/movenet-full-256.tflite uvicorn service.main:app --reload
+python loadtest_client.py <input_folder> http://localhost:8000/pose-estimation <num_workers>
 ```
 
-It isn't wired to a live endpoint (the real cluster no longer exists), so running it
-as-is will just show connection errors — it's included to demonstrate the approach, not
-to be run against a working service. To see the concurrency and the pose detection in
-action, open `live-demo.html` (or the mirrored copy linked above) directly in a browser.
+To see the pose detection and concurrency without installing anything, open
+`live-demo.html` (or the mirrored copy linked above) directly in a browser.
