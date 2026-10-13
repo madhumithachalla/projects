@@ -75,20 +75,25 @@
   </p>
 
   <div class="notice">
-    This page runs a <b>real</b> pose-detection model entirely in your browser — nothing is
-    sent to a server. It demonstrates the same skill set (pose estimation, concurrent
-    request handling, load-test interpretation) without exposing the real university
-    coursework code or standing up the real OCI/Kubernetes infrastructure again. See the
-    README in <a href="https://github.com/madhumithachalla/projects/tree/main/cloudpose-pipeline" style="color:var(--coral);" target="_blank" rel="noopener">cloudpose-pipeline</a>
-    for the honest breakdown of what's real vs. reconstructed here.
+    What's real on this page vs. not: section 1 runs an actual pose-detection model
+    live in your browser, but it's a different, generic model standing in for the
+    concept — not the real FastAPI/OpenCV service. Section 2 describes the real
+    infrastructure I built, which no longer exists to connect to. Section 3's numbers
+    are randomly generated for illustration, not measured results — I don't have the
+    original Locust report. This exists to avoid exposing the real university
+    coursework code, not to reproduce the real deployment. See the README in
+    <a href="https://github.com/madhumithachalla/projects/tree/main/cloudpose-pipeline" style="color:var(--coral);" target="_blank" rel="noopener">cloudpose-pipeline</a>
+    for the full honest breakdown.
   </div>
 
   <div class="card">
     <span class="live-badge">Live &middot; runs in your browser</span>
     <h2>1. Pose detection</h2>
     <p class="desc">Upload a photo (or use your webcam) and watch keypoints get detected
-      live — the same job the real FastAPI service did server-side with OpenCV, running
-      here via TensorFlow.js MoveNet instead.</p>
+      live. This runs a different, publicly available model (TensorFlow.js MoveNet) client-side
+      — it is <b>not</b> the real FastAPI/OpenCV service, which ran server-side on the
+      now-decommissioned cluster below. It's here to make the concept of pose estimation
+      tangible, not to reproduce the real service's exact output or performance.</p>
     <div class="btn-row">
       <button id="btnWebcam">Use webcam</button>
       <button id="btnUpload" class="ghost">Upload a photo</button>
@@ -99,10 +104,12 @@
   </div>
 
   <div class="card">
-    <span class="sim-badge">Simulated &middot; representative of the real cluster</span>
+    <span class="sim-badge">As built &middot; cluster is now decommissioned</span>
     <h2>2. Deployment architecture</h2>
-    <p class="desc">The real service ran here — three bare VMs turned into a Kubernetes
-      cluster with <code>kubeadm</code>, not a managed offering.</p>
+    <p class="desc">This is the real infrastructure the service ran on — three bare VMs
+      turned into a Kubernetes cluster with <code>kubeadm</code>, not a managed offering.
+      The cluster itself no longer exists (OCI free-tier instances get recycled), so this
+      is a description of what was actually built, not a live or simulated system.</p>
     <div class="arch-row"><b style="color:var(--paper);">OCI VCN</b><span class="line"></span><span>subnets, security lists &amp; route tables, hand-configured</span></div>
     <div class="arch">
       <div class="node"><b>Node 1 (control-plane)</b>Oracle Linux 8<br>VM.Standard3.Flex<br>4 OCPU / 8GB</div>
@@ -114,15 +121,17 @@
   </div>
 
   <div class="card">
-    <span class="sim-badge">Simulated &middot; no live backend</span>
+    <span class="sim-badge">Illustrative only &middot; not measured results</span>
     <h2>3. Concurrent load test</h2>
     <p class="desc">The real test used a Python thread-pool client (and Locust) firing
-      base64-encoded images at the deployed service in parallel. This panel simulates
-      that same concurrency pattern client-side, with randomised latency standing in for
-      real network/inference time, so you can see what the output looks like without a
-      live endpoint to hit.</p>
+      base64-encoded images at the deployed service in parallel. There's no live endpoint
+      left to hit, and I don't have the original Locust report to show here, so this panel
+      generates <b>random, illustrative numbers</b> to demonstrate the same concurrency
+      pattern (a worker pool processing requests in parallel) — the completed/req-sec/
+      latency figures below do not reflect the real deployment's actual measured
+      performance.</p>
     <div class="btn-row">
-      <button id="btnRunLoad">Run simulated load test (40 requests)</button>
+      <button id="btnRunLoad">Run illustrative load test (40 requests)</button>
       <label style="font-size:12.5px; color:var(--slate); display:flex; align-items:center; gap:6px;">
         Workers:
         <select id="workerCount" style="background:var(--bg); color:var(--paper); border:1px solid var(--line); border-radius:4px; padding:4px 6px;">
@@ -138,7 +147,7 @@
       <div class="stat"><div class="n" id="statAvg">0</div><div class="l">avg ms</div></div>
       <div class="stat"><div class="n" id="statFail">0</div><div class="l">failed</div></div>
     </div>
-    <div class="log" id="loadLog">Press "Run simulated load test" to start.</div>
+    <div class="log" id="loadLog">Press "Run illustrative load test" to start.</div>
   </div>
 
   <p class="foot">
