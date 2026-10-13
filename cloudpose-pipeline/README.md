@@ -18,15 +18,21 @@ concurrent load instead of serialising requests behind the GIL.
 ## Infrastructure I built
 
 - **Networking**: a manually configured OCI VCN — subnets, security lists and route tables
-  set up by hand, not from a template.
-- **Compute**: three Oracle Linux 8 VMs (`VM.Standard3.Flex`, 4 OCPU / 8GB RAM each).
+  set up by hand, not from a template, with the controller and worker nodes' security
+  lists opened on the specific ports Kubernetes needs (6443 for the API server, 10250 for
+  kubelet, plus the NodePort range).
+- **Compute**: three Oracle Linux 8 VMs (`VM.Standard3.Flex`, 4 OCPU / 8GB RAM each) — one
+  controller, two workers.
 - **Cluster**: a Kubernetes cluster built from scratch across those three VMs with
-  `kubeadm` — swap disabled, kernel modules and sysctl params set, containerd and Docker
-  installed, `kubelet`/`kubeadm`/`kubectl` installed, `kubeadm init
-  --pod-network-cidr=192.168.0.0/16` on the control-plane node, worker nodes joined, and
-  Calico installed as the pod network CNI.
+  `kubeadm` — swap disabled, kernel modules and sysctl params set, `containerd` installed
+  as the container runtime, `kubelet`/`kubeadm`/`kubectl` installed, `kubeadm init` run on
+  the control-plane node with Flannel's pod network CIDR (`10.244.0.0/16`), worker nodes
+  joined, and Flannel installed as the pod network CNI.
 - **Images**: the service built into a Docker image and pushed to OCI Container Registry,
   then pulled onto the cluster.
+- **Deployment**: the FastAPI service deployed with explicit CPU/memory requests (0.5 CPU,
+  512MiB) on each pod, exposed externally via a NodePort service, and scaled to 3 replicas
+  to test how Kubernetes handles the increased load.
 - **Load testing**: throughput and latency verified with Locust, driving concurrent
   requests at the deployed service to check it holds up under parallel load rather than
   just working for one request at a time.

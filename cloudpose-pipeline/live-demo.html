@@ -110,14 +110,15 @@
       turned into a Kubernetes cluster with <code>kubeadm</code>, not a managed offering.
       The cluster itself no longer exists (OCI free-tier instances get recycled), so this
       is a description of what was actually built, not a live or simulated system.</p>
-    <div class="arch-row"><b style="color:var(--paper);">OCI VCN</b><span class="line"></span><span>subnets, security lists &amp; route tables, hand-configured</span></div>
+    <div class="arch-row"><b style="color:var(--paper);">OCI VCN</b><span class="line"></span><span>subnets, security lists &amp; route tables hand-configured, ports 6443/10250/NodePort opened</span></div>
     <div class="arch">
       <div class="node"><b>Node 1 (control-plane)</b>Oracle Linux 8<br>VM.Standard3.Flex<br>4 OCPU / 8GB</div>
       <div class="node"><b>Node 2 (worker)</b>Oracle Linux 8<br>VM.Standard3.Flex<br>4 OCPU / 8GB</div>
       <div class="node"><b>Node 3 (worker)</b>Oracle Linux 8<br>VM.Standard3.Flex<br>4 OCPU / 8GB</div>
     </div>
-    <div class="arch-row" style="margin-top:14px;"><b style="color:var(--paper);">Calico CNI</b><span class="line"></span><span>pod networking across all three nodes (pod CIDR 192.168.0.0/16)</span></div>
+    <div class="arch-row" style="margin-top:14px;"><b style="color:var(--paper);">containerd + Flannel</b><span class="line"></span><span>node runtime + pod networking (pod CIDR 10.244.0.0/16)</span></div>
     <div class="arch-row"><b style="color:var(--paper);">OCI Container Registry</b><span class="line"></span><span>Docker image built &amp; pushed here, pulled by the cluster</span></div>
+    <div class="arch-row"><b style="color:var(--paper);">Deployment</b><span class="line"></span><span>0.5 CPU / 512MiB per pod, NodePort service, scaled to 3 replicas</span></div>
   </div>
 
   <div class="card">
