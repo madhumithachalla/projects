@@ -62,6 +62,10 @@
     max-height:150px; overflow-y:auto; line-height:1.6;
   }
   .foot{font-size:12px; color:var(--slate); margin-top:24px; line-height:1.5;}
+  .batch-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:10px; margin-top:12px;}
+  .batch-item{position:relative; background:var(--bg); border:1px solid var(--line); border-radius:6px; overflow:hidden;}
+  .batch-item canvas{width:100%; display:block;}
+  .batch-item .time{font-size:10.5px; color:var(--slate); text-align:center; padding:4px; font-variant-numeric:tabular-nums;}
   @media (max-width:480px){ .arch{grid-template-columns:1fr;} .stats{grid-template-columns:1fr 1fr;} }
 </style>
 </head>
@@ -104,8 +108,32 @@
   </div>
 
   <div class="card">
+    <span class="live-badge">Live &middot; runs in your browser</span>
+    <h2>2. Concurrent batch detection</h2>
+    <p class="desc">Inspired by a real feature of the enhanced service in
+      <a href="https://github.com/madhumithachalla/projects/tree/main/cloudpose-pipeline" style="color:var(--coral);" target="_blank" rel="noopener">cloudpose-pipeline</a> —
+      a <code>/pose-estimation/batch</code> endpoint that processes several images at once
+      with <code>asyncio.gather</code> instead of one at a time. This isn't that endpoint
+      (there's no server here), but it's a genuinely new, real feature built the same way
+      for the browser: pick several photos and they're all run through the pose model
+      <b>concurrently</b> with <code>Promise.all</code>, with real timing to show what
+      concurrency actually buys you over doing them one after another.</p>
+    <div class="btn-row">
+      <button id="btnBatchUpload">Upload several photos</button>
+    </div>
+    <input type="file" id="batchFileInput" accept="image/*" multiple>
+    <div class="status" id="batchStatus">Pick 2 or more photos to compare concurrent vs. sequential timing.</div>
+    <div class="batch-grid" id="batchGrid"></div>
+    <div class="stats" id="batchStats" hidden>
+      <div class="stat"><div class="n" id="batchConcurrent">0</div><div class="l">ms, concurrent (Promise.all)</div></div>
+      <div class="stat"><div class="n" id="batchSequential">0</div><div class="l">ms, sequential (sum of each)</div></div>
+      <div class="stat"><div class="n" id="batchSpeedup">0</div><div class="l">x faster concurrently</div></div>
+    </div>
+  </div>
+
+  <div class="card">
     <span class="sim-badge">As built &middot; cluster is now decommissioned</span>
-    <h2>2. Deployment architecture</h2>
+    <h2>3. Deployment architecture</h2>
     <p class="desc">This is the real infrastructure the service ran on — three bare VMs
       turned into a Kubernetes cluster with <code>kubeadm</code>, not a managed offering.
       The cluster itself no longer exists (OCI free-tier instances get recycled), so this
@@ -123,7 +151,7 @@
 
   <div class="card">
     <span class="sim-badge">Illustrative only &middot; not measured results</span>
-    <h2>3. Concurrent load test</h2>
+    <h2>4. Concurrent load test</h2>
     <p class="desc">The real test used a Python thread-pool client (and Locust) firing
       base64-encoded images at the deployed service in parallel. There's no live endpoint
       left to hit, and I don't have the original Locust report to show here, so this panel
@@ -264,6 +292,101 @@
     } catch (err) {
       poseStatus.textContent = 'Camera access denied or unavailable — try "Upload a photo" instead.';
     }
+  });
+
+  // --- Concurrent batch detection (inspired by the real service's /pose-estimation/batch) ---
+  const btnBatchUpload = document.getElementById('btnBatchUpload');
+  const batchFileInput = document.getElementById('batchFileInput');
+  const batchStatus = document.getElementById('batchStatus');
+  const batchGrid = document.getElementById('batchGrid');
+  const batchStats = document.getElementById('batchStats');
+
+  btnBatchUpload.addEventListener('click', () => batchFileInput.click());
+
+  function loadImageFile(file){
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  function drawKeypointsOnto(ctx, keypoints){
+    const connections = [[5,7],[7,9],[6,8],[8,10],[5,6],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16]];
+    ctx.strokeStyle = '#C4A6FB';
+    ctx.lineWidth = 2;
+    connections.forEach(([a,b]) => {
+      const ka = keypoints[a], kb = keypoints[b];
+      if (ka && kb && ka.score > 0.3 && kb.score > 0.3){
+        ctx.beginPath();
+        ctx.moveTo(ka.x, ka.y);
+        ctx.lineTo(kb.x, kb.y);
+        ctx.stroke();
+      }
+    });
+    keypoints.forEach(k => {
+      if (k.score > 0.3){
+        ctx.beginPath();
+        ctx.fillStyle = '#5FD69A';
+        ctx.arc(k.x, k.y, 3, 0, 2*Math.PI);
+        ctx.fill();
+      }
+    });
+  }
+
+  async function detectOne(img){
+    const started = performance.now();
+    const poses = await detector.estimatePoses(img);
+    const elapsed = performance.now() - started;
+    return { img, poses, elapsed };
+  }
+
+  batchFileInput.addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length < 1) return;
+    batchStats.hidden = true;
+    batchGrid.innerHTML = '';
+    batchStatus.textContent = 'Loading model…';
+    await ensureDetector();
+
+    batchStatus.textContent = `Loading ${files.length} image(s)…`;
+    const images = await Promise.all(files.map(loadImageFile));
+
+    batchStatus.textContent = 'Running sequentially, one at a time…';
+    const sequentialStart = performance.now();
+    for (const img of images) await detectOne(img);
+    const sequentialTotal = performance.now() - sequentialStart;
+
+    batchStatus.textContent = 'Running concurrently (Promise.all)…';
+    const concurrentStart = performance.now();
+    const results = await Promise.all(images.map(detectOne));
+    const concurrentTotal = performance.now() - concurrentStart;
+
+    batchGrid.innerHTML = '';
+    results.forEach(({ img, poses, elapsed }) => {
+      const item = document.createElement('div');
+      item.className = 'batch-item';
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      if (poses.length) drawKeypointsOnto(ctx, poses[0].keypoints);
+      item.appendChild(canvas);
+      const timeLabel = document.createElement('div');
+      timeLabel.className = 'time';
+      timeLabel.textContent = `${Math.round(elapsed)}ms`;
+      item.appendChild(timeLabel);
+      batchGrid.appendChild(item);
+    });
+
+    const speedup = concurrentTotal > 0 ? sequentialTotal / concurrentTotal : 1;
+
+    document.getElementById('batchConcurrent').textContent = Math.round(concurrentTotal);
+    document.getElementById('batchSequential').textContent = Math.round(sequentialTotal);
+    document.getElementById('batchSpeedup').textContent = speedup.toFixed(1);
+    batchStats.hidden = false;
+    batchStatus.textContent = `Processed ${results.length} image(s) — both numbers above are real, measured in your browser just now.`;
   });
 
   // --- Simulated concurrent load test ---
