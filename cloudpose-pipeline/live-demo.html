@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudPose — Live Pose Detection &amp; Load-Test Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+<style>
+  :root{
+    --bg:#100D18; --bg-panel:#1C1729; --paper:#F3EEFA; --slate:#9E90B8; --line:rgba(255,255,255,0.14);
+    --coral:#C4A6FB; --teal:#EDE4FF; --violet:#9B7EDE; --amber:#FFC107; --green:#5FD69A;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--paper); font-family:'Segoe UI', -apple-system, sans-serif; padding:32px 20px 60px;}
+  .wrap{max-width:720px; margin:0 auto;}
+  a.back{color:var(--slate); text-decoration:none; font-size:13px;}
+  h1{font-size:26px; margin:18px 0 6px;}
+  p.lead{color:var(--slate); font-size:14.5px; margin:0 0 12px; line-height:1.5;}
+  .notice{
+    background:rgba(196,166,251,0.1); border:1px solid rgba(196,166,251,0.3); border-radius:6px;
+    padding:12px 16px; font-size:13px; color:var(--paper); margin-bottom:24px; line-height:1.5;
+  }
+  .card{background:var(--bg-panel); border:1px solid var(--line); border-radius:6px; padding:22px; margin-bottom:18px;}
+  h2{font-size:17px; margin:0 0 4px;}
+  p.desc{font-size:13.5px; color:var(--slate); margin:0 0 14px; line-height:1.4;}
+  .live-badge, .sim-badge{
+    display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
+    padding:3px 9px; border-radius:20px; margin-bottom:8px;
+  }
+  .live-badge{background:rgba(95,214,154,0.15); color:var(--green); border:1px solid rgba(95,214,154,0.4);}
+  .sim-badge{background:rgba(255,193,7,0.15); color:var(--amber); border:1px solid rgba(255,193,7,0.4);}
+  button{
+    background:var(--coral); color:#1B1130; border:none; padding:10px 16px; border-radius:4px;
+    font-weight:600; font-size:13.5px; cursor:pointer;
+  }
+  button:disabled{opacity:0.4; cursor:default;}
+  button.ghost{background:transparent; border:1px solid var(--line); color:var(--paper);}
+  input[type="file"]{display:none;}
+  .dropzone{
+    border:2px dashed var(--line); border-radius:6px; padding:20px; text-align:center;
+    cursor:pointer; color:var(--slate); font-size:13.5px; margin-bottom:10px;
+  }
+  .dropzone:hover{border-color:var(--coral); color:var(--paper);}
+  .stage{position:relative; display:inline-block; max-width:100%; margin-top:10px;}
+  .stage video, .stage img, .stage canvas{max-width:100%; border-radius:6px; display:block;}
+  .stage canvas{position:absolute; top:0; left:0;}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .status{font-size:12.5px; color:var(--slate); margin-top:10px;}
+  .arch{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:4px;}
+  .node{background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:10px; font-size:12px; color:var(--teal); text-align:center;}
+  .node b{display:block; font-size:12.5px; color:var(--paper); margin-bottom:2px;}
+  .arch-row{display:flex; align-items:center; gap:8px; margin:10px 0; font-size:12px; color:var(--slate);}
+  .arch-row .line{flex:1; height:1px; background:var(--line);}
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px;}
+  .stat{background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:12px 8px; text-align:center;}
+  .stat .n{font-size:20px; font-weight:700; color:var(--coral); font-variant-numeric:tabular-nums;}
+  .stat .l{font-size:11px; color:var(--slate); margin-top:2px;}
+  .log{
+    background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:10px 12px; margin-top:12px;
+    font-family:ui-monospace, SFMono-Regular, Consolas, monospace; font-size:11.5px; color:var(--teal);
+    max-height:150px; overflow-y:auto; line-height:1.6;
+  }
+  .foot{font-size:12px; color:var(--slate); margin-top:24px; line-height:1.5;}
+  @media (max-width:480px){ .arch{grid-template-columns:1fr;} .stats{grid-template-columns:1fr 1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../../index.html#proj-cloudpose">&larr; Back to portfolio</a>
+  <h1>CloudPose</h1>
+  <p class="lead">
+    FastAPI + OpenCV pose-estimation microservice, deployed on a Kubernetes cluster I built
+    by hand across three Oracle Cloud Infrastructure VMs, and load-tested with Locust.
+  </p>
+
+  <div class="notice">
+    This page runs a <b>real</b> pose-detection model entirely in your browser — nothing is
+    sent to a server. It demonstrates the same skill set (pose estimation, concurrent
+    request handling, load-test interpretation) without exposing the real university
+    coursework code or standing up the real OCI/Kubernetes infrastructure again. See the
+    README in <a href="https://github.com/madhumithachalla/projects/tree/main/cloudpose-pipeline" style="color:var(--coral);" target="_blank" rel="noopener">cloudpose-pipeline</a>
+    for the honest breakdown of what's real vs. reconstructed here.
+  </div>
+
+  <div class="card">
+    <span class="live-badge">Live &middot; runs in your browser</span>
+    <h2>1. Pose detection</h2>
+    <p class="desc">Upload a photo (or use your webcam) and watch keypoints get detected
+      live — the same job the real FastAPI service did server-side with OpenCV, running
+      here via TensorFlow.js MoveNet instead.</p>
+    <div class="btn-row">
+      <button id="btnWebcam">Use webcam</button>
+      <button id="btnUpload" class="ghost">Upload a photo</button>
+    </div>
+    <input type="file" id="fileInput" accept="image/*">
+    <div class="stage" id="stage"></div>
+    <div class="status" id="poseStatus">Model not loaded yet &mdash; click a button above to start.</div>
+  </div>
+
+  <div class="card">
+    <span class="sim-badge">Simulated &middot; representative of the real cluster</span>
+    <h2>2. Deployment architecture</h2>
+    <p class="desc">The real service ran here — three bare VMs turned into a Kubernetes
+      cluster with <code>kubeadm</code>, not a managed offering.</p>
+    <div class="arch-row"><b style="color:var(--paper);">OCI VCN</b><span class="line"></span><span>subnets, security lists &amp; route tables, hand-configured</span></div>
+    <div class="arch">
+      <div class="node"><b>Node 1 (control-plane)</b>Oracle Linux 8<br>VM.Standard3.Flex<br>4 OCPU / 8GB</div>
+      <div class="node"><b>Node 2 (worker)</b>Oracle Linux 8<br>VM.Standard3.Flex<br>4 OCPU / 8GB</div>
+      <div class="node"><b>Node 3 (worker)</b>Oracle Linux 8<br>VM.Standard3.Flex<br>4 OCPU / 8GB</div>
+    </div>
+    <div class="arch-row" style="margin-top:14px;"><b style="color:var(--paper);">Calico CNI</b><span class="line"></span><span>pod networking across all three nodes (pod CIDR 192.168.0.0/16)</span></div>
+    <div class="arch-row"><b style="color:var(--paper);">OCI Container Registry</b><span class="line"></span><span>Docker image built &amp; pushed here, pulled by the cluster</span></div>
+  </div>
+
+  <div class="card">
+    <span class="sim-badge">Simulated &middot; no live backend</span>
+    <h2>3. Concurrent load test</h2>
+    <p class="desc">The real test used a Python thread-pool client (and Locust) firing
+      base64-encoded images at the deployed service in parallel. This panel simulates
+      that same concurrency pattern client-side, with randomised latency standing in for
+      real network/inference time, so you can see what the output looks like without a
+      live endpoint to hit.</p>
+    <div class="btn-row">
+      <button id="btnRunLoad">Run simulated load test (40 requests)</button>
+      <label style="font-size:12.5px; color:var(--slate); display:flex; align-items:center; gap:6px;">
+        Workers:
+        <select id="workerCount" style="background:var(--bg); color:var(--paper); border:1px solid var(--line); border-radius:4px; padding:4px 6px;">
+          <option value="2">2</option>
+          <option value="4" selected>4</option>
+          <option value="8">8</option>
+        </select>
+      </label>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n" id="statDone">0</div><div class="l">completed</div></div>
+      <div class="stat"><div class="n" id="statRps">0.0</div><div class="l">req/sec</div></div>
+      <div class="stat"><div class="n" id="statAvg">0</div><div class="l">avg ms</div></div>
+      <div class="stat"><div class="n" id="statFail">0</div><div class="l">failed</div></div>
+    </div>
+    <div class="log" id="loadLog">Press "Run simulated load test" to start.</div>
+  </div>
+
+  <p class="foot">
+    Real README, the fresh reconstruction of the load-test client, and the honest note on
+    why the real assignment code isn't published are at
+    <a href="https://github.com/madhumithachalla/projects/tree/main/cloudpose-pipeline" style="color:var(--coral);" target="_blank" rel="noopener">github.com/madhumithachalla/projects/cloudpose-pipeline</a>.
+  </p>
+</div>
+
+<script>
+(function(){
+  const stage = document.getElementById('stage');
+  const poseStatus = document.getElementById('poseStatus');
+  const btnWebcam = document.getElementById('btnWebcam');
+  const btnUpload = document.getElementById('btnUpload');
+  const fileInput = document.getElementById('fileInput');
+  let detector = null;
+  let rafId = null;
+
+  async function ensureDetector(){
+    if (detector) return detector;
+    poseStatus.textContent = 'Loading pose-detection model…';
+    await tf.setBackend('webgl').catch(() => tf.setBackend('cpu'));
+    await tf.ready();
+    detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
+      modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING
+    });
+    poseStatus.textContent = 'Model loaded.';
+    return detector;
+  }
+
+  function drawKeypoints(ctx, keypoints, scaleX, scaleY){
+    ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height);
+    const connections = [[5,7],[7,9],[6,8],[8,10],[5,6],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16]];
+    ctx.strokeStyle = '#C4A6FB';
+    ctx.lineWidth = 3;
+    connections.forEach(([a,b]) => {
+      const ka = keypoints[a], kb = keypoints[b];
+      if (ka && kb && ka.score > 0.3 && kb.score > 0.3){
+        ctx.beginPath();
+        ctx.moveTo(ka.x*scaleX, ka.y*scaleY);
+        ctx.lineTo(kb.x*scaleX, kb.y*scaleY);
+        ctx.stroke();
+      }
+    });
+    keypoints.forEach(k => {
+      if (k.score > 0.3){
+        ctx.beginPath();
+        ctx.fillStyle = '#5FD69A';
+        ctx.arc(k.x*scaleX, k.y*scaleY, 4, 0, 2*Math.PI);
+        ctx.fill();
+      }
+    });
+  }
+
+  function clearStage(){
+    if (rafId) cancelAnimationFrame(rafId);
+    stage.innerHTML = '';
+  }
+
+  btnUpload.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    clearStage();
+    const img = new Image();
+    img.onload = async () => {
+      stage.appendChild(img);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      stage.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+      await ensureDetector();
+      poseStatus.textContent = 'Running pose detection…';
+      const poses = await detector.estimatePoses(img);
+      if (poses.length){
+        drawKeypoints(ctx, poses[0].keypoints, 1, 1);
+        poseStatus.textContent = `Detected ${poses[0].keypoints.filter(k=>k.score>0.3).length} keypoints.`;
+      } else {
+        poseStatus.textContent = 'No pose detected in this image — try one with a clearer, fuller view of a person.';
+      }
+    };
+    img.src = URL.createObjectURL(file);
+  });
+
+  btnWebcam.addEventListener('click', async () => {
+    clearStage();
+    poseStatus.textContent = 'Requesting camera…';
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.autoplay = true;
+      video.playsInline = true;
+      stage.appendChild(video);
+      await new Promise(r => video.onloadedmetadata = r);
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      stage.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+      await ensureDetector();
+      poseStatus.textContent = 'Live.';
+      const loop = async () => {
+        const poses = await detector.estimatePoses(video);
+        if (poses.length) drawKeypoints(ctx, poses[0].keypoints, 1, 1);
+        else ctx.clearRect(0,0,canvas.width,canvas.height);
+        rafId = requestAnimationFrame(loop);
+      };
+      loop();
+    } catch (err) {
+      poseStatus.textContent = 'Camera access denied or unavailable — try "Upload a photo" instead.';
+    }
+  });
+
+  // --- Simulated concurrent load test ---
+  const btnRunLoad = document.getElementById('btnRunLoad');
+  const workerCount = document.getElementById('workerCount');
+  const statDone = document.getElementById('statDone');
+  const statRps = document.getElementById('statRps');
+  const statAvg = document.getElementById('statAvg');
+  const statFail = document.getElementById('statFail');
+  const loadLog = document.getElementById('loadLog');
+
+  function fakeRequest(id){
+    const latency = 80 + Math.random()*220;
+    const fail = Math.random() < 0.03;
+    return new Promise(resolve => setTimeout(() => resolve({ id, latency, fail }), latency));
+  }
+
+  btnRunLoad.addEventListener('click', async () => {
+    btnRunLoad.disabled = true;
+    const total = 40;
+    const workers = parseInt(workerCount.value, 10);
+    let completed = 0, failed = 0, latencies = [];
+    loadLog.textContent = '';
+    const started = performance.now();
+
+    let nextId = 0;
+    async function worker(){
+      while (nextId < total){
+        const id = nextId++;
+        const result = await fakeRequest(id);
+        completed++;
+        if (result.fail) failed++;
+        latencies.push(result.latency);
+        const elapsedSec = (performance.now() - started) / 1000;
+        statDone.textContent = completed;
+        statFail.textContent = failed;
+        statRps.textContent = (completed / elapsedSec).toFixed(1);
+        statAvg.textContent = Math.round(latencies.reduce((a,b)=>a+b,0)/latencies.length);
+        loadLog.textContent += `Thread-${(id % workers)}  image_${String(id).padStart(3,'0')}.jpg  ${result.fail ? 'ERROR' : '200 OK'}  ${Math.round(result.latency)}ms\n`;
+        loadLog.scrollTop = loadLog.scrollHeight;
+      }
+    }
+
+    await Promise.all(Array.from({length: workers}, worker));
+    const totalElapsed = ((performance.now() - started)/1000).toFixed(2);
+    loadLog.textContent += `\nDone. ${total} requests, ${workers} workers, ${totalElapsed}s total, ${failed} failed.`;
+    btnRunLoad.disabled = false;
+  });
+})();
+</script>
+</body>
+</html>

@@ -8,6 +8,7 @@ and resume — real code, not just descriptions of it.
 | Project | Type | What it is | Stack | AI assistance |
 |---|---|---|---|---|
 | [`birdtag/`](./birdtag) | Team (4) | Serverless wildlife media tagging | AWS Lambda, API Gateway, Cognito, DynamoDB, S3, Python | No |
+| [`cloudpose-pipeline/`](./cloudpose-pipeline) | Solo | Pose-estimation microservice on a self-built OCI Kubernetes cluster | FastAPI, OpenCV, Docker, Kubernetes, OCI, Locust, Python | Yes, reconstruction script, readme and live demo written by Claude from my own project notes |
 | [`spotify-success-analysis/`](./spotify-success-analysis) | Solo | Statistical analysis of 114K Spotify tracks | R, tidyverse, ggplot2 | Yes, used to understand how to lay out the analysis |
 | [`esaver/`](./esaver) | Team (4) | Android energy-saving app | Kotlin, Retrofit, Firebase Firestore | No |
 | [`document-extraction-pipeline/`](./document-extraction-pipeline) | Solo | OCR + pattern-matching pipeline for scanned PDFs | Python, pytesseract, PIL, pdf2image | No |
@@ -40,6 +41,11 @@ generator) is included in full, since it's entirely my own work.
 
 CliMaze (ShelfShift) is different: it is a competition build the team owns together, so
 the full repo is public under my account with every member credited.
+
+CloudPose is solo work, not a team project, but the same rule applies for a different
+reason: it was built to a Monash-provided assignment specification that other students
+in the same unit also work from, so the real implementation isn't published here either
+— what's in that folder is a fresh reconstruction of the approach, written from scratch.
 
 ## Live demos
 
