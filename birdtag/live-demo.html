@@ -59,7 +59,7 @@
 <div class="wrap">
   <a class="back" href="https://madhumithachalla.github.io">← Back to portfolio</a>
   <h1>BirdTag — interactive flow demo</h1>
-  <p class="lead">A walkthrough of the piece I personally built for BirdTag: Cognito-gated authentication into a signed S3 upload, then species tagging.</p>
+  <p class="lead">A walkthrough of the piece I personally built for BirdTag: Cognito-gated authentication into a signed S3 upload, then species tagging across wildlife generally, not just birds.</p>
   <div class="notice">⚠ <b>This is a front-end simulation.</b> The real BirdTag runs against deployed AWS infrastructure (Cognito, API Gateway, Lambda, DynamoDB, S3) that can't run from a static file. The auth step and the species result below are simulated client-side so you can walk through the interaction flow I designed — the actual auth logic and Lambda functions are in <code>birdtag_auth_and_upload_demo.py</code>.</div>
 
   <div class="card">
@@ -77,7 +77,7 @@
       <div class="step-num" id="num2">2</div>
       <div class="step-body">
         <h3>Upload media (signed URL, simulated)</h3>
-        <p class="desc">Real flow: this Lambda function generates a short-lived presigned S3 URL, scoped to your Cognito user ID. Try uploading any bird photo.</p>
+        <p class="desc">Real flow: this Lambda function generates a short-lived presigned S3 URL, scoped to your Cognito user ID. Try uploading any wildlife photo — bird, mammal, reptile, whatever you've got.</p>
         <div class="dropzone" id="dropzone">Click to choose an image</div>
         <input type="file" id="fileInput" accept="image/*">
         <img id="thumb" class="thumb" style="display:none;">
@@ -108,6 +108,11 @@ const SPECIES = [
   { name: "Australian Magpie", confidence: 0.91 },
   { name: "Laughing Kookaburra", confidence: 0.87 },
   { name: "Crimson Rosella", confidence: 0.93 },
+  { name: "Eastern Grey Kangaroo", confidence: 0.92 },
+  { name: "Koala", confidence: 0.96 },
+  { name: "Short-beaked Echidna", confidence: 0.85 },
+  { name: "Common Wombat", confidence: 0.90 },
+  { name: "Sugar Glider", confidence: 0.82 },
 ];
 
 document.getElementById('signInBtn').addEventListener('click', () => {
