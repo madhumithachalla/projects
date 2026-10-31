@@ -41,6 +41,8 @@
     cursor:pointer; color:var(--slate); font-size:13.5px;
   }
   .dropzone:hover{border-color:var(--coral); color:var(--paper);}
+  .dropzone:focus-visible{outline:2px solid var(--coral); outline-offset:2px; border-color:var(--coral); color:var(--paper);}
+  .dropzone.drag-over{border-color:var(--coral); color:var(--paper); background:rgba(196,166,251,0.08);}
   .thumb{max-width:160px; border-radius:4px; margin-top:12px; border:1px solid var(--line);}
   .result{
     border-left:3px solid var(--violet); background:rgba(155,126,222,0.08);
@@ -78,7 +80,7 @@
       <div class="step-body">
         <h3>Upload media (signed URL, simulated)</h3>
         <p class="desc">Real flow: this Lambda function generates a short-lived presigned S3 URL, scoped to your Cognito user ID. Try uploading any wildlife photo — bird, mammal, reptile, whatever you've got.</p>
-        <div class="dropzone" id="dropzone">Click to choose an image</div>
+        <div class="dropzone" id="dropzone" tabindex="0">Click to choose, paste (Ctrl/Cmd+V), or drag an image here</div>
         <input type="file" id="fileInput" accept="image/*">
         <img id="thumb" class="thumb" style="display:none;">
       </div>
@@ -128,18 +130,50 @@ const fileInput = document.getElementById('fileInput');
 const thumb = document.getElementById('thumb');
 const tagBtn = document.getElementById('tagBtn');
 
-dropzone.addEventListener('click', () => {
+function handleFile(file){
+  if (!file || !file.type.startsWith('image/')) return;
   if (!signedIn) { alert('Sign in first — step 1.'); return; }
-  fileInput.click();
-});
-fileInput.addEventListener('change', (e) => {
-  if (!e.target.files.length) return;
-  thumb.src = URL.createObjectURL(e.target.files[0]);
+  thumb.src = URL.createObjectURL(file);
   thumb.style.display = 'block';
   uploaded = true;
   document.getElementById('num2').classList.add('done');
   document.getElementById('num2').textContent = '✓';
   tagBtn.disabled = false;
+}
+
+dropzone.addEventListener('click', () => {
+  if (!signedIn) { alert('Sign in first — step 1.'); return; }
+  fileInput.click();
+});
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files.length) handleFile(e.target.files[0]);
+});
+
+// Paste an image straight in (Ctrl/Cmd+V) — focus the dropzone first, or
+// just paste anywhere on the page once you're signed in.
+document.addEventListener('paste', (e) => {
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      handleFile(item.getAsFile());
+      break;
+    }
+  }
+});
+
+// Drag-and-drop works the same way, since it's the same underlying flow.
+['dragover', 'dragenter'].forEach(evt => dropzone.addEventListener(evt, (e) => {
+  e.preventDefault();
+  dropzone.classList.add('drag-over');
+}));
+['dragleave', 'dragend', 'drop'].forEach(evt => dropzone.addEventListener(evt, () => {
+  dropzone.classList.remove('drag-over');
+}));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
 });
 
 tagBtn.addEventListener('click', () => {
