@@ -55,3 +55,44 @@ Several projects include a `live-demo.html` — an actual working (or clearly-la
 simulated, for BirdTag) version you can open directly in a browser once this repo is
 pushed and hosted, or by opening the file locally. No build step, no dependencies beyond
 what's loaded via CDN in the file itself.
+
+## Automatic portfolio tiles
+
+New non-academic projects in top-level folders are discovered by the portfolio's
+public GitHub integration on visits. Give a new project a `README.md`; optionally
+add `portfolio.json` inside its folder for its display details:
+
+```json
+{
+  "kind": "personal",
+  "title": "My project",
+  "description": "A short public description.",
+  "demo": "https://example.com/",
+  "categories": ["web", "automation"]
+}
+```
+
+Use `kind` of `personal`, `professional`, or `competition`. Categories are `cloud`,
+`mobile`, `web`, `data`, `automation`, `design`, and `team`. Only public descriptions
+and demo links belong in metadata. Do not include application records, resumes,
+credentials, or original coursework. No private repository is read or made public.
+
+Keep original academic work private. For any public academic reconstruction or
+project that should not get an automatic tile, use:
+
+```json
+{ "kind": "academic", "exclude": true }
+```
+
+BirdTag, CloudPose, ESaver and Spotify analysis carry explicit exclusion files.
+The existing handwritten portfolio showcases are curated separately. Academic
+markers in a new project's README also exclude it, even if it is mistakenly
+labelled personal. Metadata makes the intention explicit; wording detection alone
+cannot recognise undisclosed coursework.
+
+The matching portfolio implementation and its tests are in
+[`madhumithachalla.github.io`](https://github.com/madhumithachalla/madhumithachalla.github.io),
+under `portfolio-sync.js` and `docs/07-automatic-project-tiles.md`. It continues to
+discover future public folders and standalone public repositories after setup;
+GitHub availability and public API limits can delay automatic tiles. Handwritten
+tiles remain available when GitHub cannot be reached.
