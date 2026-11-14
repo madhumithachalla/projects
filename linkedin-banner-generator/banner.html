@@ -3,132 +3,193 @@
 <head>
 <meta charset="UTF-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&family=IBM+Plex+Sans:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;1,9..144,600&family=Inter:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  html, body {
-    width:1584px; height:396px; overflow:hidden;
-    background:#0D0A16;
-    font-family:'IBM Plex Sans', sans-serif;
-  }
+  html, body { width:1584px; height:396px; overflow:hidden; background:#1B1130; }
+
+  /* ---- canvas: portfolio hero background (same nebula glows on deep purple) ---- */
   .banner {
-    position:relative; width:1584px; height:396px;
+    position:relative; width:1584px; height:396px; overflow:hidden; flex-shrink:0;
     background:
-      radial-gradient(circle at 82% 12%, rgba(255,111,94,0.38), transparent 40%),
-      radial-gradient(circle at 96% 60%, rgba(245,166,35,0.30), transparent 42%),
-      radial-gradient(circle at 68% 95%, rgba(45,212,191,0.26), transparent 45%),
-      radial-gradient(circle at 55% 40%, rgba(155,126,222,0.30), transparent 55%),
-      #0D0A16;
-    overflow:hidden;
+      radial-gradient(circle at 12% 18%, rgba(255,111,94,0.22), transparent 20%),
+      radial-gradient(circle at 88% 12%, rgba(45,212,191,0.22), transparent 24%),
+      radial-gradient(circle at 70% 95%, rgba(155,126,222,0.30), transparent 28%),
+      radial-gradient(circle at 98% 75%, rgba(107,163,255,0.18), transparent 22%),
+      radial-gradient(circle at 30% 100%, rgba(245,166,35,0.14), transparent 22%),
+      radial-gradient(ellipse at 50% 0%, rgba(243,238,250,0.06), transparent 60%),
+      #1B1130;
+    color:#F3EEFA; font-family:'Inter', sans-serif;
   }
+  /* starfield (static box-shadows, no JS) */
+  .stars { position:absolute; left:0; top:0; width:1.3px; height:1.3px; border-radius:50%; background:transparent;
+    box-shadow:
+      932px 290px 0 0 rgba(255,255,255,0.72),
+      931px 264px 0 0 rgba(255,255,255,0.72),
+      1054px 247px 0 0 rgba(255,255,255,0.6),
+      1426px 328px 0 0 rgba(255,255,255,0.27),
+      933px 338px 0 0 rgba(255,255,255,0.66),
+      79px 101px 0 0 rgba(255,255,255,0.73),
+      956px 171px 0 0 rgba(255,255,255,0.49),
+      1069px 123px 0 0 rgba(255,255,255,0.6),
+      1362px 47px 0 0 rgba(255,255,255,0.5),
+      1134px 46px 0 0 rgba(255,255,255,0.64),
+      1575px 59px 0 0 rgba(255,255,255,0.47),
+      797px 38px 0 0 rgba(255,255,255,0.78),
+      7px 113px 0 0 rgba(255,255,255,0.37),
+      968px 196px 0 0 rgba(255,255,255,0.79),
+      155px 293px 0 0 rgba(255,255,255,0.6),
+      558px 176px 0 0 rgba(255,255,255,0.3),
+      1453px 55px 0 0 rgba(255,255,255,0.26),
+      1003px 94px 0 0 rgba(255,255,255,0.63),
+      1048px 101px 0 0 rgba(255,255,255,0.79),
+      864px 333px 0 0 rgba(255,255,255,0.46),
+      441px 4px 0 0 rgba(255,255,255,0.4),
+      389px 205px 0 0 rgba(255,255,255,0.8),
+      910px 136px 0 0 rgba(255,255,255,0.26),
+      1199px 329px 0 0 rgba(255,255,255,0.38),
+      767px 322px 0 0 rgba(255,255,255,0.5),
+      996px 298px 0 0 rgba(255,255,255,0.32),
+      1290px 82px 0 0 rgba(255,255,255,0.42),
+      1256px 131px 0 0 rgba(255,255,255,0.65),
+      1294px 287px 0 0 rgba(255,255,255,0.36),
+      229px 23px 0 0 rgba(255,255,255,0.53),
+      1521px 364px 0 0 rgba(255,255,255,0.47),
+      1227px 255px 0 0 rgba(255,255,255,0.41),
+      1481px 39px 0 0 rgba(255,255,255,0.32),
+      1344px 319px 0 0 rgba(255,255,255,0.59),
+      423px 387px 0 0 rgba(255,255,255,0.26),
+      918px 131px 0 0 rgba(255,255,255,0.28),
+      747px 74px 0 0 rgba(255,255,255,0.74),
+      1351px 379px 0 0 rgba(255,255,255,0.63),
+      1515px 381px 0 0 rgba(255,255,255,0.64),
+      705px 184px 0 0 rgba(255,255,255,0.3),
+      1029px 297px 0 0 rgba(255,255,255,0.26),
+      191px 331px 0 0 rgba(255,255,255,0.31),
+      858px 376px 0 0 rgba(255,255,255,0.43),
+      1427px 301px 0 0 rgba(255,255,255,0.5),
+      1114px 46px 0 0 rgba(255,255,255,0.54),
+      1436px 61px 0 0 rgba(255,255,255,0.52),
+      1001px 134px 0 0 rgba(255,255,255,0.74),
+      299px 351px 0 0 rgba(255,255,255,0.59),
+      1549px 179px 0 0 rgba(255,255,255,0.61),
+      500px 171px 0 0 rgba(255,255,255,0.47),
+      1304px 224px 0 0 rgba(255,255,255,0.69),
+      416px 113px 0 0 rgba(255,255,255,0.46),
+      654px 111px 0 0 rgba(255,255,255,0.32),
+      89px 368px 0 0 rgba(255,255,255,0.29),
+      352px 61px 0 0 rgba(255,255,255,0.5),
+      444px 215px 0 0 rgba(255,255,255,0.46),
+      1382px 165px 0 0 rgba(255,255,255,0.64),
+      1285px 235px 0 0 rgba(255,255,255,0.43),
+      575px 315px 0 0 rgba(255,255,255,0.27),
+      1174px 185px 0 0 rgba(255,255,255,0.42),
+      45px 332px 0 0 rgba(255,255,255,0.32),
+      1102px 339px 0 0 rgba(255,255,255,0.6),
+      165px 354px 0 0 rgba(255,255,255,0.36),
+      530px 95px 0 0 rgba(255,255,255,0.64),
+      1101px 369px 0 0 rgba(255,255,255,0.27),
+      714px 280px 0 0 rgba(255,255,255,0.63),
+      1264px 391px 0 0 rgba(255,255,255,0.34),
+      1439px 118px 0 0 rgba(255,255,255,0.3),
+      1485px 202px 0 0 rgba(255,255,255,0.32),
+      1287px 7px 0 0 rgba(255,255,255,0.46),
+      1035px 179px 0 0 rgba(255,255,255,0.51),
+      425px 54px 0 0 rgba(255,255,255,0.65),
+      1320px 371px 0 0 rgba(255,255,255,0.32),
+      805px 48px 0 0 rgba(255,255,255,0.79),
+      662px 138px 0 0 rgba(255,255,255,0.75),
+      719px 262px 0 0 rgba(255,255,255,0.3); }
+  .stars.big { width:2.4px; height:2.4px;
+    box-shadow:
+      198px 232px 0 0 rgba(255,255,255,0.42),
+      1282px 11px 0 0 rgba(255,255,255,0.71),
+      476px 266px 0 0 rgba(255,255,255,0.41),
+      845px 392px 0 0 rgba(255,255,255,0.76),
+      1219px 159px 0 0 rgba(255,255,255,0.8),
+      1187px 55px 0 0 rgba(255,255,255,0.27),
+      612px 201px 0 0 rgba(255,255,255,0.29),
+      994px 313px 0 0 rgba(255,255,255,0.29),
+      761px 275px 0 0 rgba(255,255,255,0.56),
+      293px 306px 0 0 rgba(255,255,255,0.27),
+      738px 362px 0 0 rgba(255,255,255,0.42),
+      1231px 329px 0 0 rgba(255,255,255,0.29),
+      643px 167px 0 0 rgba(255,255,255,0.33),
+      933px 283px 0 0 rgba(255,255,255,0.45),
+      165px 217px 0 0 rgba(255,255,255,0.77),
+      782px 302px 0 0 rgba(255,255,255,0.26),
+      641px 311px 0 0 rgba(255,255,255,0.3),
+      56px 140px 0 0 rgba(255,255,255,0.38),
+      102px 326px 0 0 rgba(255,255,255,0.31); }
+  /* meteor streaks */
+  .streak { position:absolute; height:3px; border-radius:3px; transform-origin:right center; }
+  .streak.s1 { left:1360px; top:40px; width:190px; transform:rotate(20deg); background:linear-gradient(90deg, transparent, #F5A623 70%, #FF6F5E); }
+  .streak.s2 { left:1440px; top:150px; width:120px; transform:rotate(22deg); background:linear-gradient(90deg, transparent, #2DD4BF); }
 
-  /* meteor streaks - static, decorative, now colour-cycled brighter */
-  .streak { position:absolute; height:3px; border-radius:2px; transform-origin:right center; }
-  .streak.s1 { width:190px; top:64px; left:900px; transform:rotate(18deg); background:linear-gradient(90deg, transparent, #FF6F5E); }
-  .streak.s2 { width:130px; top:148px; left:1190px; transform:rotate(18deg); background:linear-gradient(90deg, transparent, #FFCB73); }
-  .streak.s3 { width:160px; top:282px; left:1010px; transform:rotate(18deg); background:linear-gradient(90deg, transparent, #2DD4BF); }
-  .spark { position:absolute; width:5px; height:5px; border-radius:50%; }
-  .spark.c1 { background:#FF6F5E; box-shadow:0 0 12px 3px rgba(255,111,94,0.8); }
-  .spark.c2 { background:#FFCB73; box-shadow:0 0 12px 3px rgba(255,203,115,0.8); }
-  .spark.c3 { background:#2DD4BF; box-shadow:0 0 12px 3px rgba(45,212,191,0.8); }
+  /* left ~500px stays clear for LinkedIn's profile photo (bigger on mobile). Logo sits above it. */
+  .logo { position:absolute; left:49px; top:60px; width:383px; }
 
-  /* left ~540px kept clear for the circular profile photo LinkedIn overlays */
-  .content {
-    position:absolute; left:540px; top:88px; right:56px; bottom:88px;
-    display:flex; flex-direction:column; justify-content:center;
-  }
+  /* row 1: availability pill + visa status */
+  .status-row { position:absolute; left:500px; top:66px; display:flex; align-items:center; gap:16px; white-space:nowrap; }
+  .status-pill { display:flex; align-items:center; gap:10px; font:500 20px/1 'Inter',sans-serif; color:#E7DFF7;
+    background:rgba(255,111,94,.14); border:1.5px solid rgba(255,111,94,.4); padding:8px 16px 8px 13px; border-radius:20px; }
+  .dot { width:10px; height:10px; border-radius:50%; background:#FF6F5E; box-shadow:0 0 0 4px rgba(255,111,94,.3); flex:none; }
+  .visa { font:500 20px/1 'Inter',sans-serif; color:#C7BEDB; }
 
-  .name {
-    font-family:'Fraunces', serif;
-    font-weight:800;
-    font-size:78px;
-    line-height:0.93;
-    letter-spacing:-0.01em;
-    background:linear-gradient(100deg, #FFFFFF 30%, #FFCB73 62%, #FF6F5E 88%);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    margin-bottom:14px;
-  }
+  /* row 2: headline (same gradient as the portfolio hero name) */
+  .headline { position:absolute; left:500px; top:98px; white-space:nowrap;
+    font:700 64px/1.05 'Fraunces',serif; letter-spacing:-.02em;
+    background:linear-gradient(105deg,#FFFFFF 18%,#FFF3D6 42%,#F5A623 68%,#FF6F5E 94%);
+    -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 6px 22px rgba(245,166,35,.18)); }
 
-  .tagline {
-    font-family:'IBM Plex Sans', sans-serif;
-    font-weight:600;
-    font-size:23px;
-    color:#F3EEFA;
-    margin-bottom:20px;
-  }
-  .tagline b { color:#2DD4BF; font-weight:700; }
+  /* row 3: skills as plain keywords separated by pipes */
+  .skills { position:absolute; left:500px; top:178px; white-space:nowrap; font:600 30px/1 'Inter',sans-serif; color:#F3EEFA; }
+  .skills .pipe { color:#7C6FA0; font-weight:500; margin:0 12px; }
 
-  .stack {
-    display:flex; gap:10px; margin-bottom:22px; flex-wrap:wrap;
-  }
-  .pill {
-    font-family:'IBM Plex Mono', monospace;
-    font-weight:600;
-    font-size:14px;
-    color:#0D0A16;
-    background:#F3EEFA;
-    padding:6px 15px;
-    border-radius:20px;
-  }
-  .pill.c-coral { background:#FF6F5E; color:#1B1130; }
-  .pill.c-amber { background:#FFCB73; color:#1B1130; }
-  .pill.c-teal { background:#2DD4BF; color:#0D0A16; }
-  .pill.c-violet { background:#C4A6FB; color:#1B1130; }
+  /* row 4: hook (from the portfolio About section) */
+  .hook { position:absolute; left:500px; top:228px; white-space:nowrap; font:italic 600 29px/1 'Fraunces',serif; color:#F5A623; }
 
-  .contact-row {
-    display:flex; gap:13px; align-items:center; flex-wrap:nowrap;
-  }
-  .contact-row span {
-    font-family:'IBM Plex Mono', monospace;
-    font-weight:600;
-    font-size:13px;
-    color:#F3EEFA;
-    white-space:nowrap;
-  }
-  .contact-row .dot { color:#FFCB73; }
+  /* right column: link + email, large enough to read */
+  .contact { position:absolute; right:64px; top:222px; text-align:right; white-space:nowrap; font:500 24px/1.3 'IBM Plex Mono',monospace; }
+  .contact .link { color:#2DD4BF; }
+  .contact .mail { color:#F3EEFA; }
 
-  .signature {
-    position:absolute; right:56px; bottom:30px;
-    font-family:'IBM Plex Mono', monospace;
-    font-weight:500;
-    font-size:14px;
-    color:#B9AACF;
-    letter-spacing:0.02em;
-  }
-  .signature b { color:#FF6F5E; }
+  /* row 5: proof of experience */
+  .stats { position:absolute; left:500px; top:288px; display:flex; align-items:center; gap:22px; white-space:nowrap; font:500 20px/1 'Inter',sans-serif; color:#C7BEDB; }
+  .stats em { font:700 30px/1 'Inter',sans-serif; font-style:normal; margin-right:8px; }
+  .stats .div { width:1.5px; height:30px; background:rgba(243,238,250,.25); }
+
 </style>
 </head>
 <body>
-  <div class="banner">
-    <div class="streak s1"></div>
-    <div class="streak s2"></div>
-    <div class="streak s3"></div>
-    <div class="spark c1" style="top:62px; left:1080px;"></div>
-    <div class="spark c2" style="top:146px; left:1310px;"></div>
-    <div class="spark c3" style="top:280px; left:1160px;"></div>
+  <div class="banner" id="banner">
+      <div class="stars"></div><div class="stars big"></div>
+      <div class="streak s1"></div>
+      <div class="streak s2"></div>
+      <img class="logo" src="logo.svg" alt="">
 
-    <div class="content">
-      <div class="name">Madhumitha<br>Challa</div>
-      <div class="tagline"><b>Cloud &amp; Systems Engineering</b> · Data · IT Support</div>
-      <div class="stack">
-        <div class="pill c-coral">AWS</div>
-        <div class="pill c-amber">Azure</div>
-        <div class="pill c-teal">Oracle Cloud HCM</div>
-        <div class="pill c-violet">Microsoft 365</div>
-        <div class="pill">Python</div>
+      <div class="status-row">
+        <div class="status-pill"><span class="dot"></span><span>Open to work across Australia · Melbourne</span></div>
+        <div class="visa">Student visa now · 485 after graduation</div>
       </div>
-      <div class="contact-row">
-        <span>madhumithachalla.github.io</span>
-        <span class="dot">·</span>
-        <span>rchmadhumitha@gmail.com</span>
-        <span class="dot">·</span>
-        <span>linkedin.com/in/madhumitha-challa</span>
-        <span class="dot">·</span>
-        <span>github.com/MadhumithaChalla</span>
+
+      <div class="headline">Cloud &amp; Systems Engineer</div>
+
+      <div class="skills">AWS<span class="pipe">|</span>Python<span class="pipe">|</span>SQL<span class="pipe">|</span>Data Entry &amp; Analysis<span class="pipe">|</span>AI<span class="pipe">|</span>Web</div>
+
+      <div class="hook">Innovation starts with ideas others overlook.</div>
+
+      <div class="contact">
+        <div class="link">madhumithachalla.github.io</div>
+        <div class="mail">rchmadhumitha@gmail.com</div>
+      </div>
+
+      <div class="stats">
+        <div><em style="color:#FF6F5E">3+</em><span>yrs enterprise IT</span></div>
+        <div class="div"></div>
+        <div><em style="color:#2DD4BF">3.2M</em><span>members supported</span></div>
       </div>
     </div>
-
-    <div class="signature">aka <b>Female Photon</b> ✦ writing &amp; singing</div>
-  </div>
 </body>
 </html>

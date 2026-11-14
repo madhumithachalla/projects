@@ -20,9 +20,9 @@ every time.
 ## Architecture
 
 - **`banner.html`** is the actual banner design: pure HTML/CSS at a fixed 1584×396px
-  canvas size (LinkedIn's exact banner spec), no JavaScript. Layout, gradient meteor
-  streaks, the name treatment, tech pills, and the contact line are all CSS — nothing is
-  a raster image.
+  canvas size (LinkedIn's exact banner spec), no JavaScript. Layout, starfield, meteor
+  streaks, the gradient headline, the skills line, and the contact block are all CSS.
+  The only image is `logo.svg` (the M C mark), loaded from this folder.
 - **`render.js`** uses [Playwright](https://playwright.dev/) to launch headless Chromium,
   open `banner.html` at the exact banner viewport with `deviceScaleFactor: 2` (for a
   crisp, high-DPI screenshot), wait briefly for web fonts to finish loading, then
@@ -36,8 +36,8 @@ every time.
 ## Live editor (no code editing needed)
 
 [**`editor.html`**](./editor.html) is an in-browser version of the banner you can edit
-directly — click any text (name, tagline, pills, contact line, signature) to change it
-in place, add/remove tech pills, then click **Download PNG**, **Download JPEG**, or
+directly — click any text (availability, visa line, headline, skills, hook, stats,
+contact block) to change it in place, then click **Download PNG**, **Download JPEG**, or
 **Download PDF** to export, all sized to LinkedIn's exact 1584×396 spec. Runs entirely
 client-side (via [html2canvas](https://html2canvas.hertzen.com/) and
 [jsPDF](https://github.com/parallax/jsPDF), loaded from cdnjs) — nothing is uploaded
@@ -47,23 +47,27 @@ enabled.
 ## To edit the banner via code
 
 Everything — text, colors, fonts, layout, the meteor streaks — lives in `banner.html`.
-Open it in any text editor. A few useful spots:
+Open it in any text editor. The design is one row per line of text, all left-aligned to
+the same 500px edge. A few useful spots (class names in the HTML body):
 
-- **Your name / tagline / tech pills / contact line** — search for the `.content` div
-  near the bottom of the `<body>`, plain HTML you can edit directly.
-- **The "aka Female Photon..." signature** — the `.signature` div, right after `.content`.
-- **Colors** — all colors are hex values inline in the `<style>` block at the top,
-  matching the portfolio site's full accent palette (not just one hue): deep purple
-  `#0D0A16` background, with coral `#FF6F5E`, amber `#FFCB73`, teal `#2DD4BF`, and
-  violet `#C4A6FB` used across the name gradient, tech pills, and meteor streaks.
-- **Contact line** — currently shows the portfolio URL, email, LinkedIn, and GitHub in
-  that order, at a small font (13px) so all four fit on one line at the banner's
-  1584px width. Add/remove a `<span>` + `<span class="dot">·</span>` pair to change it,
-  and re-check that it still fits without wrapping after editing.
-- **The left-clear zone for your profile photo** — `.content { left: 540px; ... }`.
-  Don't reduce this below ~500px — LinkedIn's mobile app renders your profile circle
-  much bigger than the desktop view does, and 540px is the smallest margin that clears
-  both (verified against an actual screenshot of your live profile).
+- **`.status-row`** — the availability pill ("Open to work across Australia · Melbourne")
+  and the visa status next to it. Update the visa wording here when it changes.
+- **`.headline`** — the Fraunces headline, painted with the same amber-to-coral gradient
+  as the portfolio hero name.
+- **`.skills`** — plain keywords separated by `<span class="pipe">|</span>`. Add or remove a
+  keyword plus its pipe to change it, and check it still fits on one line.
+- **`.hook`** — the italic amber line (from the portfolio About section).
+- **`.contact`** — portfolio link and email, stacked and right-aligned at 24px so they
+  stay readable on a phone.
+- **`.stats`** — the two proof points under the hook.
+- **Colors** — taken straight from the portfolio's `styles.css`: background `#1B1130`,
+  coral `#FF6F5E`, amber `#F5A623`, teal `#2DD4BF`, violet `#9B7EDE`, with `#F3EEFA` text.
+- **Fonts** — Fraunces (headline, hook), Inter (labels, skills), IBM Plex Mono (contact),
+  loaded from Google Fonts in the `<head>`. Same families as the portfolio.
+- **The left-clear zone for your profile photo** — everything except the logo starts at
+  `left: 500px`. Don't reduce this below ~500px — LinkedIn's mobile app renders your profile
+  circle much bigger than the desktop view does. The desktop view also crops a little off the
+  top and bottom, so keep text roughly between y=64px and y=332px.
 
 ## To regenerate the PNG after editing
 
@@ -96,6 +100,7 @@ Then upload `linkedin_banner_final.png` to LinkedIn as your banner image.
 ## Files here
 
 - `banner.html` — the actual banner design (HTML/CSS, no JS).
+- `logo.svg` — the M C logo mark used on the left of the banner.
 - `render.js` — Playwright script that screenshots `banner.html` to a PNG.
 - `editor.html` — the live, in-browser contenteditable editor with PNG/JPEG/PDF export.
 - `madhumitha_linkedin_banner.png` — the current rendered output.
