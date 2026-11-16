@@ -126,39 +126,40 @@
   .streak.s1 { left:1360px; top:40px; width:190px; transform:rotate(20deg); background:linear-gradient(90deg, transparent, #F5A623 70%, #FF6F5E); }
   .streak.s2 { left:1440px; top:150px; width:120px; transform:rotate(22deg); background:linear-gradient(90deg, transparent, #2DD4BF); }
 
-  /* left ~500px stays clear for LinkedIn's profile photo (bigger on mobile). Logo sits above it. */
-  .logo { position:absolute; left:49px; top:60px; width:383px; }
+  /* left ~500px stays clear for LinkedIn's profile photo (bigger on mobile). The logo sits centred above it. */
+  .logo { position:absolute; left:92px; top:65px; width:340px; }
+
+  /* ONE content block inside the safe zone (x 500-1520, y 72-324). Rows are spread with equal gaps. */
+  .content { position:absolute; left:500px; right:64px; top:72px; height:252px;
+    display:flex; flex-direction:column; justify-content:space-between; align-items:stretch; white-space:nowrap; }
 
   /* row 1: availability pill + visa status */
-  .status-row { position:absolute; left:500px; top:66px; display:flex; align-items:center; gap:16px; white-space:nowrap; }
+  .status-row { display:flex; align-items:center; gap:16px; height:34px; }
   .status-pill { display:flex; align-items:center; gap:10px; font:500 20px/1 'Inter',sans-serif; color:#E7DFF7;
     background:rgba(255,111,94,.14); border:1.5px solid rgba(255,111,94,.4); padding:8px 16px 8px 13px; border-radius:20px; }
   .dot { width:10px; height:10px; border-radius:50%; background:#FF6F5E; box-shadow:0 0 0 4px rgba(255,111,94,.3); flex:none; }
   .visa { font:500 20px/1 'Inter',sans-serif; color:#C7BEDB; }
 
   /* row 2: headline (same gradient as the portfolio hero name) */
-  .headline { position:absolute; left:500px; top:98px; white-space:nowrap;
-    font:700 64px/1.05 'Fraunces',serif; letter-spacing:-.02em;
+  .headline { height:64px; font:700 62px/64px 'Fraunces',serif; letter-spacing:-.02em; align-self:flex-start;
     background:linear-gradient(105deg,#FFFFFF 18%,#FFF3D6 42%,#F5A623 68%,#FF6F5E 94%);
     -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
     filter:drop-shadow(0 6px 22px rgba(245,166,35,.18)); }
 
   /* row 3: skills as plain keywords separated by pipes */
-  .skills { position:absolute; left:500px; top:178px; white-space:nowrap; font:600 30px/1 'Inter',sans-serif; color:#F3EEFA; }
+  .skills { height:32px; font:600 30px/32px 'Inter',sans-serif; color:#F3EEFA; }
   .skills .pipe { color:#7C6FA0; font-weight:500; margin:0 12px; }
 
-  /* row 4: hook (from the portfolio About section) */
-  .hook { position:absolute; left:500px; top:228px; white-space:nowrap; font:italic 600 29px/1 'Fraunces',serif; color:#F5A623; }
-
-  /* right column: link + email, large enough to read */
-  .contact { position:absolute; right:64px; top:222px; text-align:right; white-space:nowrap; font:500 24px/1.3 'IBM Plex Mono',monospace; }
+  /* row 4: footer. Left stack (hook + stats) and right stack (link + email) share the same bottom edge. */
+  .footer { display:flex; justify-content:space-between; align-items:flex-end; }
+  .footer-left { display:flex; flex-direction:column; gap:14px; }
+  .hook { font:italic 600 28px/30px 'Fraunces',serif; color:#F5A623; }
+  .stats { display:flex; align-items:center; gap:22px; font:500 20px/30px 'Inter',sans-serif; color:#C7BEDB; }
+  .stats em { font:700 30px/30px 'Inter',sans-serif; font-style:normal; margin-right:8px; }
+  .stats .div { width:1.5px; height:28px; background:rgba(243,238,250,.25); }
+  .contact { text-align:right; font:500 24px/31px 'IBM Plex Mono',monospace; }
   .contact .link { color:#2DD4BF; }
   .contact .mail { color:#F3EEFA; }
-
-  /* row 5: proof of experience */
-  .stats { position:absolute; left:500px; top:288px; display:flex; align-items:center; gap:22px; white-space:nowrap; font:500 20px/1 'Inter',sans-serif; color:#C7BEDB; }
-  .stats em { font:700 30px/1 'Inter',sans-serif; font-style:normal; margin-right:8px; }
-  .stats .div { width:1.5px; height:30px; background:rgba(243,238,250,.25); }
 
 </style>
 </head>
@@ -169,26 +170,30 @@
       <div class="streak s2"></div>
       <img class="logo" src="logo.svg" alt="">
 
-      <div class="status-row">
-        <div class="status-pill"><span class="dot"></span><span>Open to work across Australia · Melbourne</span></div>
-        <div class="visa">Student visa now · 485 after graduation</div>
-      </div>
+      <div class="content">
+        <div class="status-row">
+          <div class="status-pill"><span class="dot"></span><span>Open to work across Australia · Melbourne</span></div>
+          <div class="visa">Student visa now · 485 after graduation</div>
+        </div>
 
-      <div class="headline">Cloud &amp; Systems Engineer</div>
+        <div class="headline">Cloud &amp; Systems Engineer</div>
 
-      <div class="skills">AWS<span class="pipe">|</span>Python<span class="pipe">|</span>SQL<span class="pipe">|</span>Data Entry &amp; Analysis<span class="pipe">|</span>AI<span class="pipe">|</span>Web</div>
+        <div class="skills">AWS<span class="pipe">|</span>Python<span class="pipe">|</span>SQL<span class="pipe">|</span>Data Entry &amp; Analysis<span class="pipe">|</span>AI<span class="pipe">|</span>Web</div>
 
-      <div class="hook">Innovation starts with ideas others overlook.</div>
-
-      <div class="contact">
-        <div class="link">madhumithachalla.github.io</div>
-        <div class="mail">rchmadhumitha@gmail.com</div>
-      </div>
-
-      <div class="stats">
-        <div><em style="color:#FF6F5E">3+</em><span>yrs enterprise IT</span></div>
-        <div class="div"></div>
-        <div><em style="color:#2DD4BF">3.2M</em><span>members supported</span></div>
+        <div class="footer">
+          <div class="footer-left">
+            <div class="hook">Innovation starts with ideas others overlook.</div>
+            <div class="stats">
+              <div><em style="color:#FF6F5E">3+</em><span>yrs enterprise IT</span></div>
+              <div class="div"></div>
+              <div><em style="color:#2DD4BF">3.2M</em><span>members supported</span></div>
+            </div>
+          </div>
+          <div class="contact">
+            <div class="link">madhumithachalla.github.io</div>
+            <div class="mail">rchmadhumitha@gmail.com</div>
+          </div>
+        </div>
       </div>
     </div>
 </body>
